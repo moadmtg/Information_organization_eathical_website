@@ -42,10 +42,10 @@ https://moadmtg.github.io/Information_organization_eathical_website/index.html
    cd Information_organization_eathical_website
 
 2. **Start a local server**
-# Windows
+## Windows
 py -m http.server 5500
 
-# macOS/Linux
+## macOS/Linux
 python3 -m http.server 5500
 
 3. **Open the homepage:**
@@ -132,6 +132,7 @@ Eathical/
 ├── assets/                        # CSS, JS, and icon files
 ├── DataClean.csv                  # Combined NEVO + LCA dataset
 └── README.md                      # (You are here)
+└── IO-project.pdf                 # The report
 ```
 
 ---
