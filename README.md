@@ -31,16 +31,14 @@ Using the unique NEVO code a food product has, these databases were merged. This
 ---
 ## Running Eathical Online
 1. **Open the following link to end up on the homepage of Eathical**
-https://moadmtg.github.io/EAthical_Info_Org/index.html
+https://moadmtg.github.io/Information_organization_eathical_website/index.html
 
 ## Running Eathical Locally
-
-No installation or server setup is needed to run Eathical locally.
 
 ### Steps:
 1. **Download or clone the repository:**
    ```bash
-   git clone https://github.com/<yourusername>/Eathical.git
+   git clone https://github.com/moadmtg/Information_organization_eathical_website.git
    ```
 
 2. Unzip the downloaded folder if necessary.
