@@ -35,13 +35,11 @@ https://moadmtg.github.io/Information_organization_eathical_website/index.html
 
 ## Running Eathical Locally
 
-## Running Eathical Locally
-
 ### Steps:
 1. **Download or clone the repository:**
    ```
    git clone https://github.com/moadmtg/Information_organization_eathical_website.git
-   cd Information_organization_eathical_website/html_files
+   cd Information_organization_eathical_website
 
 2. **Start a local server**
 # Windows
