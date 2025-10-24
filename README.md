@@ -35,20 +35,25 @@ https://moadmtg.github.io/Information_organization_eathical_website/index.html
 
 ## Running Eathical Locally
 
+## Running Eathical Locally
+
 ### Steps:
 1. **Download or clone the repository:**
-   ```bash
-   git clone https://github.com/moadmtg/Information_organization_eathical_website.git
    ```
+   git clone https://github.com/moadmtg/Information_organization_eathical_website.git
+   cd Information_organization_eathical_website/html_files
 
-2. Unzip the downloaded folder if necessary.
+2. **Start a local server**
+# Windows
+py -m http.server 5500
+
+# macOS/Linux
+python3 -m http.server 5500
 
 3. **Open the homepage:**
-   - Locate `index.html` in the main directory.
-   - Double-click to open it in your web browser (Chrome, Safari, Edge, Firefox).
-
-The website should work correctly and locally after these steps.
-
+   - Go to your browser
+   - Open http://localhost:5500/
+   
 ---
 
 ## Website Structure and Tools
