@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sustainable Food Quiz Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #EDF5EC;
+            color: #3B3B3B; 
+        }
+
+        /* Colors that can be re-used (niet veranderen please) */
+        :root {
+            --primary-color: #68b97d;
+            --accent-color: #D93025; 
+            --secondary-color: #1A73E8; 
+            --custom-color: #F97316; 
+        }
+
+        .primary-bg { background-color: var(--primary-color); }
+        .primary-text { color: var(--primary-color); }
+        .secondary-text { color: var(--secondary-color); }
+        .custom-text { color: var(--custom-color); } 
+        .custom-bg { background-color: #FFFBEB; border-color: var(--custom-color); } 
+
+        .nav-link { 
+            @apply text-gray-600 hover:primary-text border-b-2 border-transparent hover:border-current px-3 py-2 text-sm font-medium transition duration-150;
+        }
+        .nav-link.current {
+            @apply primary-text border-b-2 border-current;
+        }
+
+        
+        .card {
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1); 
+            border-radius: 12px; 
+            overflow: hidden; 
+        }
+        .card::before {
+            content: '';
+            display: block;
+            height: 6px;
+            width: 100%;
+            background-color: var(--primary-color);
+        }
+
+        /* For the topics */
+        #select-environment { background-color: #e6f3ec; border-color: var(--primary-color); }
+        #select-food { background-color: #fbe6e6; border-color: var(--accent-color); }
+        #select-combination { background-color: #e6f0fa; border-color: var(--secondary-color); }
+        #select-builder { background-color: var(--custom-bg); border-color: var(--custom-color); } /* NEW */
+
+
+        .topic-block {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border-width: 1px;
+            border-style: solid;
+            padding: 35px;
+        }
+        .topic-block:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .metric-toggle.selected {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        .correct-answer {
+            background-color: var(--primary-color) !important;
+            color: white !important;
+            border-color: var(--primary-color) !important;
+        }
+        .wrong-answer {
+            background-color: var(--accent-color) !important;
+            color: white !important;
+            border-color: var(--accent-color) !important;
+        }
+        .option-button {
+            transition: all 0.2s ease-in-out;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* Spinning animation to show the user what is being done */
+        .spinner {
+            border: 5px solid rgba(0, 0, 0, 0.1);
+            border-top: 5px solid var(--primary-color); 
+            border-radius: 50%;
+            width: 50px; 
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* For the pie chart (check als jullie een andere kleur willen) */
+        .pie-chart-container {
+            border-radius: 50%; 
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .legend-color.primary { background-color: var(--primary-color); }
+        .legend-color.accent { background-color: var(--accent-color); }
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 8px;
+        }
+
+        /* Modal Backdrop */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <header class="bg-white shadow-md sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="index.html" class="flex items-center space-x-2">
+                    <i class="fa-solid fa-seedling primary-text text-2xl"></i>
+                    <span class="text-2xl font-extrabold text-gray-800">Eathical</span>
+                </a>
+
+                <nav id="desktop-nav" class="hidden sm:ml-6 sm:flex sm:space-x-4 items-center"></nav>
+
+                <button id="mobile-menu-button" class="sm:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:primary-text" aria-expanded="false">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="mobile-menu" class="hidden sm:hidden bg-white shadow-lg">
+            <div id="mobile-menu-links" class="pt-2 pb-3 space-y-1">
+                </div>
+        </div>
+    </header>
+
+    <main class="flex-grow flex items-start justify-center p-4">
+        <div class="w-full max-w-5xl pt-4">
+
+            <div id="intro-block" class="bg-white p-8 rounded-xl shadow-md mb-8 border-l-8 border-[color:var(--primary-color)]">
+                <div class="flex flex-col md:flex-row items-center gap-6">
+                    <div class="text-6xl text-[color:var(--secondary-color)]">
+                        <i class="fas fa-book-reader"></i> 
+                        <i class="fas fa-seedling text-[color:var(--primary-color)] ml-2"></i>
+                    </div>
+                    
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800 mb-2">Compare Nutritional Values & Impact</h2>
+                        <p class="text-gray-600">
+                            This quiz tool is designed for educational purposes. Use it to teach interested individuals in an interactive way about the differences between food items based on nutritional values (like protein and vitamins) and environmental impact (like CO2 emissions and water consumption).
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="start-screen" class="card bg-white p-10 rounded-xl">
+                <h1 class="text-3xl font-extrabold text-gray-800 mb-6 text-center border-b pb-3">Step 1: Choose Quiz Type</h1>
+                <p class="text-center text-gray-600 mb-8 text-lg">Select a focus area to generate a random quiz, or use the Quiz Builder to make your own!</p>
+
+                <div class="flex justify-center mb-10">
+                    <label for="quiz-length-selector" class="block text-lg font-medium text-gray-700 mr-4 self-center">Quiz Length (Auto-Generated):</label>
+                    <select id="quiz-length-selector" class="py-2 px-4 border border-gray-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-[color:var(--primary-color)] focus:border-[color:var(--primary-color)] sm:text-sm font-medium text-lg">
+                        <option value="5">5 Questions (Quick)</option>
+                        <option value="10" selected>10 Questions (Standard)</option>
+                        <option value="15">15 Questions</option>
+                        <option value="20">20 Questions (Extended)</option>
+                    </select>
+                </div>
+                
+                <div id="loading-state" class="flex flex-col items-center justify-center p-12 text-gray-500">
+                    <div class="spinner mb-4"></div>
+                    <p class="text-xl font-medium text-gray-800">Loading food data for quiz...</p>
+                    <p class="text-sm mt-2">This is only slow on the very first load due to data parsing. We're getting the metrics ready!</p>
+                </div>
+
+                <div id="topic-selection-blocks" class="grid grid-cols-1 md:grid-cols-4 gap-8 hidden">
+                    <div id="select-environment" class="topic-block rounded-xl border text-center" onclick="showMetricSelection('environment')">
+                        <i class="fas fa-globe-europe text-5xl text-[color:var(--primary-color)] mb-3"></i>
+                        <h2 class="text-xl font-bold text-gray-800">Environmental Impact</h2>
+                        <p class="text-sm text-gray-600 mt-3">Focus on CO2, water consumption, and land use.</p>
+                    </div>
+
+                    <div id="select-food" class="topic-block rounded-xl border text-center" onclick="showMetricSelection('food')">
+                        <i class="fas fa-apple-alt text-5xl text-[color:var(--accent-color)] mb-3"></i>
+                        <h2 class="text-xl font-bold text-gray-800">Nutritional Value</h2>
+                        <p class="text-sm text-gray-600 mt-3">Focus on energy, protein, fiber, and vitamins.</p>
+                    </div>
+
+                    <div id="select-combination" class="topic-block rounded-xl border text-center" onclick="startQuiz('combination', ALL_METRICS)">
+                        <i class="fas fa-balance-scale text-5xl text-[color:var(--secondary-color)] mb-3"></i>
+                        <h2 class="text-xl font-bold text-gray-800">Combination</h2>
+                        <p class="text-sm text-gray-600 mt-3">A mix of all environmental and nutritional values.</p>
+                    </div>
+
+                    <div id="select-builder" class="topic-block rounded-xl border text-center" onclick="showQuizBuilder()">
+                        <i class="fas fa-hammer text-5xl custom-text mb-3"></i>
+                        <h2 class="text-xl font-bold text-gray-800 custom-text">Quiz builder</h2>
+                        <p class="text-sm text-gray-600 mt-3 font-semibold">Create your own quiz questions based on specific comparisons!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="metric-selection-screen" class="card bg-white p-10 rounded-xl hidden">
+                <h1 class="text-3xl font-extrabold text-gray-800 mb-6 text-center border-b pb-3">Step 2: Customize Metrics</h1>
+                <p class="text-center text-gray-600 mb-8 text-lg">Select the specific data points that the questions should cover. Select at least one metric.</p>
+                
+                <div id="metric-toggles-container" class="flex flex-wrap gap-3 justify-center mb-8">
+                    </div>
+
+                <div class="flex justify-between items-center pt-4 border-t">
+                    <button class="py-3 px-6 rounded-lg text-gray-700 font-bold bg-gray-100 hover:bg-gray-200 transition duration-200 shadow-sm text-lg" onclick="resetToStartScreen()">
+                        <i class="fas fa-arrow-left mr-1"></i> Back
+                    </button>
+                    <button id="start-custom-quiz-button" class="py-3 px-6 rounded-lg text-white font-bold bg-[color:var(--secondary-color)] hover:bg-blue-700 transition duration-200 shadow-md text-lg" onclick="validateAndStartCustomQuiz()" disabled>
+                        <i class="fas fa-play mr-1"></i> Start Quiz
+                    </button>
+                </div>
+            </div>
+            
+            <div id="quiz-container" class="hidden">
+                <div id="question-screen" class="card bg-white p-10 rounded-xl">
+                    <div class="flex justify-between items-center mb-4 border-b pb-3">
+                        <p id="current-question-indicator" class="text-gray-600 font-semibold text-lg">Question 1 of 10</p>
+                        <button class="text-base font-medium text-red-600 hover:text-red-800 transition duration-150" onclick="quitQuiz()">
+                            <i class="fas fa-times-circle mr-1"></i> Stop Quiz
+                        </button>
+                    </div>
+                    
+                    <h2 class="text-2xl font-bold text-gray-800 mb-8" id="question-text">Loading question...</h2>
+                    
+                    <div id="options-container" class="space-y-4">
+                        </div>
+                    
+                    <div id="feedback-message" class="mt-6 p-4 rounded-lg font-semibold hidden border text-lg"></div>
+                    
+                    <div id="chart-container" class="mt-8 p-6 border rounded-xl bg-gray-50 hidden">
+                        <h4 class="text-xl font-bold mb-3 text-gray-800 text-center border-b pb-2" id="chart-title"></h4>
+                        <p id="chart-total-value" class="text-base text-gray-500 mb-4 text-center"></p>
+
+                        <div class="flex flex-col md:flex-row justify-center items-center gap-8">
+                            <div id="chart-pie-wrapper" class="w-[180px] h-[180px] flex justify-center items-center">
+                                </div>
+                            <div id="chart-legend" class="flex flex-col space-y-2">
+                                </div>
+                        </div>
+                    </div>
+
+                    <button id="next-button" class="mt-10 w-full py-3 rounded-lg text-white font-bold bg-[color:var(--primary-color)] hover:bg-green-700 transition duration-200 shadow-md text-lg" disabled>
+                        Next Question
+                    </button>
+                </div>
+            </div>
+
+            <div id="results-screen" class="card bg-white p-10 rounded-xl hidden">
+                <h2 class="text-3xl font-extrabold text-[color:var(--primary-color)] mb-4 text-center">Quiz Completed!</h2>
+                <p class="text-xl text-gray-700 mb-6 text-center border-b pb-4">Your Final Score:</p>
+                <div class="text-7xl font-extrabold text-center text-gray-800 mb-8" id="final-score">0 / 10</div>
+                
+                <div class="space-y-3">
+                    <button id="restart-button" class="w-full py-3 rounded-lg text-white font-bold bg-[color:var(--secondary-color)] hover:bg-blue-700 transition duration-200 shadow-md text-lg" onclick="resetToStartScreen()">
+                        Start New Quiz
+                    </button>
+                    <button id="back-to-start-button" class="w-full py-3 rounded-lg text-gray-700 font-bold bg-gray-200 hover:bg-gray-300 transition duration-200 shadow-sm text-lg" onclick="resetToStartScreen()">
+                        <i class="fas fa-arrow-left mr-1"></i> Back to Quiz Type Selection
+                    </button>
+                </div>
+            </div>
+            </div>
+    </main>
+    
+    <div id="quiz-builder-modal" class="modal-backdrop hidden">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl p-6">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="text-2xl font-bold text-gray-800 custom-text"><i class="fas fa-hammer mr-2"></i> Quiz Builder: Create a Custom Question</h3>
+                <button class="text-gray-500 hover:text-gray-800" onclick="document.getElementById('quiz-builder-modal').classList.add('hidden')">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <p class="text-base text-gray-600 mb-4">Select two food items and a metric to create a new comparison question for a custom quiz.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                    <label for="builder-food1" class="block text-sm font-medium text-gray-700">Food 1</label>
+                    <input list="food-names-list" id="builder-food1" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[color:var(--primary-color)] focus:border-[color:var(--primary-color)] sm:text-sm rounded-md shadow-sm" placeholder="Type or select a food">
+                </div>
+                <div>
+                    <label for="builder-food2" class="block text-sm font-medium text-gray-700">Food 2</label>
+                    <input list="food-names-list" id="builder-food2" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[color:var(--primary-color)] focus:border-[color:var(--primary-color)] sm:text-sm rounded-md shadow-sm" placeholder="Type or select a food">
+                </div>
+                <div>
+                    <label for="builder-metric" class="block text-sm font-medium text-gray-700">Metric</label>
+                    <select id="builder-metric" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[color:var(--primary-color)] focus:border-[color:var(--primary-color)] sm:text-sm rounded-md shadow-sm"></select>
+                </div>
+            </div>
+
+            <datalist id="food-names-list"></datalist>
+
+            <button class="w-full py-2 px-4 border border-transparent rounded-md shadow-md text-base font-medium text-white bg-[color:var(--primary-color)] hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[color:var(--primary-color)]" onclick="createCustomQuizQuestion()">
+                Add to Custom Quiz
+            </button>
+
+            <div id="custom-quiz-questions-list" class="mt-6 border rounded-lg p-4 bg-gray-50 min-h-24">
+                <p class="text-gray-500 text-center pt-8">Custom Quiz: 0 questions added.</p>
+            </div>
+            
+            <div class="mt-4 flex justify-end space-x-3">
+                <button class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300" onclick="clearCustomQuiz()">
+                    Clear Custom Quiz
+                </button>
+                <button id="start-custom-build-quiz" class="px-4 py-2 bg-[color:var(--secondary-color)] text-white rounded-lg hover:bg-blue-700 shadow-sm" onclick="startCustomQuizFromBuilder()" disabled>
+                    Start Custom Quiz
+                </button>
+            </div>
+        </div>
+    </div>
+  <footer class="bg-gray-800 text-white py-8 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <p class="text-sm">
+        © <span id="year"></span> Eathical — Food Impact Insights
+      </p>
+    </div>
+  </footer>
+  
+
+
+    <script>
+    
+        const CSV_FILE_PATH = 'DataClean.csv';
+        const LOCAL_STORAGE_KEY = 'DataCleanQuizData_v2'; 
+        const ENV_KEYS = [
+            'Global warming kg CO2', 'Terrestrial acidification kg SO2', 'Freshwater eutrophication kg P ', 
+            'Marine eutrophication kg N ', 'Land use m2a crop', 'Water consumption m3'
+        ];
+        const FOOD_KEYS = [
+            'Protein (g)', 'Fat (g)', 'Carbohydrates (g)', 'Sugars (g)', 'Fiber (g)', 
+            'Energy (kcal)', 'Vitamin C (mg)', 'Calcium (mg)', 'Phosphorus (mg)', 'Magnesium (mg)', 'Iron (mg)', 
+            'Copper (mg)', 'Selenium (&micro;g)', 'Zinc(mg)', 'Iodine (&micro;g)', 'Vitamin D (&micro;g)', 'Vitamin E (mg)', 
+            'Vitamin K (&micro;g)', 'Vitamin B1 (mg)', 'Vitamin B2 (mg)', 'Vitamin B6 (mg)', 'Vitamin B12 (&micro;g)', 
+            'Vitamin B3 (mg)'
+        ];
+        const ALL_METRICS = [...ENV_KEYS.map(key => key.trim()), ...FOOD_KEYS.map(key => key.trim())];
+        const FOOD_NAME_KEY = 'Food name';
+        let allData = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let totalQuestions = 10;
+        let currentQuizQuestions = []; 
+        let selectedTopic = '';
+        let selectedMetrics = [];
+        let customQuizQuestions = []; 
+
+
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            if (lines.length < 2) return [];
+
+            const headerLine = lines[0].trim();
+            const cleanHeaderLine = headerLine.replace(/µg/g, '&micro;g');
+            const headers = cleanHeaderLine.split(';').map(h => h.trim()); 
+            const dataLines = lines.slice(2); 
+            
+            const foodNameHeader = headers.find(h => h.includes('Food name')) || 'Food name';
+
+            return dataLines.map(line => {
+                const values = line.split(';');
+                const row = {};
+                
+                headers.forEach((header, i) => {
+                    const key = header.trim();
+                    let rawValue = values[i] ? values[i].trim() : '';
+
+                    if (rawValue.startsWith('"') && rawValue.endsWith('"')) {
+                        rawValue = rawValue.substring(1, rawValue.length - 1);
+                    }
+                    
+                    rawValue = rawValue.replace(/,/g, '.');
+
+                    if (!isNaN(parseFloat(rawValue)) && rawValue !== '') {
+                        row[key] = parseFloat(rawValue);
+                    } else {
+                        row[key] = rawValue;
+                    }
+                });
+                row[FOOD_NAME_KEY] = row[foodNameHeader];
+                return row;
+            }).filter(row => row[FOOD_NAME_KEY] && row[FOOD_NAME_KEY] !== '');
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        
+    /**Randomly Generates a single question object based on two food items and a metric.
+         Returns null if a valid question cannot be created (e.g., values are identical).*/
+// keep your current Option B version
+function createSingleQuestion(food1, food2, metricKey) {
+  const cleanMetricKey = metricKey.trim();
+  const val1 = food1[cleanMetricKey];
+  const val2 = food2[cleanMetricKey];
+
+  const scale = Math.max(1, Math.abs(val1), Math.abs(val2));
+  const meaningful = Math.abs(val1 - val2) > (1e-6 * scale + 1e-9);
+
+  if (typeof val1 === 'number' && typeof val2 === 'number' && meaningful) {
+    const isHigher = val1 > val2;
+    const correctAnswerText = isHigher ? food1[FOOD_NAME_KEY] : food2[FOOD_NAME_KEY];
+    const options = [correctAnswerText, isHigher ? food2[FOOD_NAME_KEY] : food1[FOOD_NAME_KEY]];
+    shuffleArray(options);
+    return {
+      text: `Which item, ${food1[FOOD_NAME_KEY]} or ${food2[FOOD_NAME_KEY]}, has a higher value for ${cleanMetricKey} per 100 grams?`,
+      options,
+      answer: correctAnswerText,
+      data: { foodA: food1[FOOD_NAME_KEY], foodB: food2[FOOD_NAME_KEY], valA: val1, valB: val2, metric: cleanMetricKey },
+      isCustom: false
+    };
+  }
+  return null;
+}
+
+
+
+function generateQuizQuestions(keys) {
+  const generatedQuestions = [];
+  const metrics = keys.map(k => k.trim());
+  const MAX_TRIES = 400;
+
+  const valuesMeaningfullyDifferent = (a, b) => {
+    const absDiff = Math.abs(a - b);
+    const scale = Math.max(1, Math.abs(a), Math.abs(b));
+    return absDiff > (1e-6 * scale + 1e-9);
+  };
+
+  let tries = 0;
+  while (generatedQuestions.length < totalQuestions && tries < MAX_TRIES) {
+    tries++;
+
+    // pick metric first
+    const metricKey = metrics[Math.floor(Math.random() * metrics.length)];
+
+    // foods that actually have a usable value for THIS metric
+    const validFoods = allData.filter(d => {
+      const v = d[metricKey];
+      return typeof v === 'number' && isFinite(v) && v > 0;
+    });
+    if (validFoods.length < 2) continue;
+
+    // pick two distinct foods
+    const i1 = Math.floor(Math.random() * validFoods.length);
+    let i2 = Math.floor(Math.random() * validFoods.length);
+    if (i2 === i1) i2 = (i2 + 1) % validFoods.length;
+
+    const food1 = validFoods[i1];
+    const food2 = validFoods[i2];
+
+    const v1 = food1[metricKey];
+    const v2 = food2[metricKey];
+    if (!valuesMeaningfullyDifferent(v1, v2)) continue;
+
+    const question = createSingleQuestion(food1, food2, metricKey);
+    if (question) {
+      question.isCustom = false;
+      generatedQuestions.push(question);
+    }
+  }
+
+  return generatedQuestions;
+}
+
+
+        function onDataLoaded() {
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('topic-selection-blocks').classList.remove('hidden');
+            populateBuilderDropdowns();
+        }
+
+        async function loadAndParseCSV(filePath) {
+            const cachedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (cachedData) {
+                try {
+                    allData = JSON.parse(cachedData);
+                    console.log("Data loaded from Local Storage.");
+                    onDataLoaded();
+                    return;
+                } catch (e) {
+                    console.error("Failed to parse cached data. Fetching new data.", e);
+                    localStorage.removeItem(LOCAL_STORAGE_KEY);
+                }
+            }
+            try {
+                const response = await fetch(filePath);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const text = await response.text();
+                
+                allData = parseCSV(text);
+
+                // 3. Store in Local Storage for next time
+                try {
+                    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allData));
+                    console.log("Data successfully fetched and cached.");
+                } catch (e) {
+                    console.warn("Could not cache data (e.g., storage quota exceeded).", e);
+                }
+
+                onDataLoaded();
+            } catch (error) {
+                console.error("Could not load or parse CSV data:", error);
+                document.getElementById('loading-state').innerHTML = `<p class="text-red-500 text-lg">Error loading data. Details: ${error.message}</p>`;
+                document.getElementById('topic-selection-blocks').classList.add('hidden'); // Ensure no interaction is possible
+            }
+        }
+
+        // Selecting the metrics 
+
+        function showMetricSelection(topic) {
+        selectedTopic = topic;
+        const keys = (topic === 'environment') ? ENV_KEYS : FOOD_KEYS;
+        const container = document.getElementById('metric-toggles-container');
+        const selectionScreen = document.getElementById('metric-selection-screen');
+        
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('intro-block').classList.add('hidden');
+        selectionScreen.classList.remove('hidden');
+
+        container.innerHTML = ''; 
+        selectedMetrics = [];
+        document.getElementById('start-custom-quiz-button').disabled = true;
+
+        const validKeys = keys.filter(key => {
+            const values = allData.map(d => d[key]).filter(v => typeof v === 'number' && isFinite(v) && v > 0);
+            return values.length >= 2; // keep only metrics with usable data (Vitamin B12 gonee)
+        });
+
+        validKeys.forEach(key => {
+            const button = document.createElement('button');
+            const cleanKey = key.trim().replace(/&micro;/g, 'µ'); 
+            button.type = 'button';
+            button.textContent = cleanKey;
+            button.className = 'metric-toggle py-2 px-4 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 shadow-sm text-base';
+            button.setAttribute('data-metric', key.trim()); 
+            button.onclick = () => toggleMetric(button, key.trim());
+            container.appendChild(button);
+        });
+}
+
+
+        function toggleMetric(button, metric) {
+            const index = selectedMetrics.indexOf(metric);
+            
+            if (index > -1) {
+                // Remove metric
+                selectedMetrics.splice(index, 1);
+                button.classList.remove('selected');
+            } else {
+                // Add metric
+                selectedMetrics.push(metric);
+                button.classList.add('selected');
+            }
+            document.getElementById('start-custom-quiz-button').disabled = selectedMetrics.length === 0;
+        }
+
+        function validateAndStartCustomQuiz() {
+            if (selectedMetrics.length === 0) {
+                alert("Please select at least one metric to generate the quiz.");
+                return;
+            }
+            // For the auto-generated quiz we delete the existing custom questions if they are there 
+            customQuizQuestions = []; 
+            startQuiz(selectedTopic, selectedMetrics);
+        }
+
+        // Quiz rules 
+
+        function startQuiz(topic, keys) {
+            // Determine the question set
+            if (customQuizQuestions.length > 0) {
+                currentQuizQuestions = customQuizQuestions; // Use custom questions
+                totalQuestions = customQuizQuestions.length;
+            } else {
+                // Set quiz length from the selector for auto-generated quiz
+                totalQuestions = parseInt(document.getElementById('quiz-length-selector').value);
+                currentQuizQuestions = generateQuizQuestions(keys);
+            }
+            
+            selectedTopic = topic;
+            
+            if (currentQuizQuestions.length === 0) {
+                alert(`Could not generate a meaningful quiz with the selected topic and metrics or no custom questions were added.`);
+                resetToStartScreen(); // Go back to start if no questions
+                return;
+            }
+
+            if (customQuizQuestions.length === 0 && currentQuizQuestions.length < totalQuestions) {
+                alert(`Only ${currentQuizQuestions.length} meaningful questions could be generated with the selected metrics. Starting quiz with ${currentQuizQuestions.length} questions.`);
+                totalQuestions = currentQuizQuestions.length;
+            }
+
+
+            // Hide previous screens, show quiz
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('metric-selection-screen').classList.add('hidden');
+            document.getElementById('intro-block').classList.add('hidden');
+            document.getElementById('quiz-container').classList.remove('hidden');
+            
+            initializeQuiz();
+        }
+
+        function initializeQuiz() {
+            score = 0;
+            currentQuestionIndex = 0;
+
+            document.getElementById('results-screen').classList.add('hidden');
+            document.getElementById('quiz-container').classList.remove('hidden');
+            document.getElementById('question-screen').classList.remove('hidden');
+            document.getElementById('next-button').textContent = 'Next Question';
+            
+            showQuestion();
+        }
+
+        function showQuestion() {
+            if (currentQuestionIndex >= currentQuizQuestions.length) {
+                showResults();
+                return;}
+            
+            const question = currentQuizQuestions[currentQuestionIndex];
+            
+            document.getElementById('options-container').innerHTML = '';
+            document.getElementById('feedback-message').classList.add('hidden');
+            document.getElementById('next-button').disabled = true;
+            document.getElementById('chart-container').classList.add('hidden'); 
+
+            // 
+            document.getElementById('question-text').innerHTML = question.text;
+            document.getElementById('current-question-indicator').textContent = 
+                `Question ${currentQuestionIndex + 1} of ${currentQuizQuestions.length}`;
+            
+            if (currentQuestionIndex === currentQuizQuestions.length - 1) {
+                document.getElementById('next-button').textContent = 'Finish Quiz'; 
+            }
+
+            question.options.forEach(option => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'option-button w-full py-4 px-4 text-left rounded-lg border-2 border-gray-200 bg-white text-gray-800 font-medium hover:bg-gray-50 text-lg';
+                button.textContent = option;
+                button.setAttribute('data-option', option);
+                button.onclick = () => checkAnswer(button, question);
+                document.getElementById('options-container').appendChild(button);
+            });
+        }
+        
+        function quitQuiz() {
+            if (confirm("Are you sure you want to stop the current quiz and return to the main menu? Your current score will be lost.")) {
+                resetToStartScreen();
+            }
+        }
+
+        function checkAnswer(selectedButton, question) {
+            const selectedOption = selectedButton.getAttribute('data-option');
+            const correctAnswer = question.answer;
+            const allButtons = document.querySelectorAll('.option-button');
+            const nextButton = document.getElementById('next-button');
+            const feedback = document.getElementById('feedback-message');
+
+            allButtons.forEach(btn => {
+                btn.classList.add('disabled', 'cursor-not-allowed');
+                btn.onclick = null;
+                
+                if (btn.textContent === correctAnswer) {
+                    btn.classList.add('correct-answer');
+                    btn.classList.remove('hover:bg-gray-50');
+                } else if (btn === selectedButton) {
+                    btn.classList.add('wrong-answer');
+                    btn.classList.remove('hover:bg-gray-50');
+                }
+            });
+
+            if (selectedOption === correctAnswer) {
+                score++;
+                feedback.textContent = 'Correct! Good knowledge!';
+                feedback.classList.remove('text-red-600');
+                feedback.classList.add('text-[color:var(--primary-color)]', 'border-[color:var(--primary-color)]', 'bg-green-50');
+                feedback.classList.remove('border-red-500', 'bg-red-50');
+            } else {
+                feedback.textContent = `Incorrect. The correct answer was ${correctAnswer}.`;
+                feedback.classList.remove('text-[color:var(--primary-color)]');
+                feedback.classList.add('text-red-600', 'border-red-500', 'bg-red-50');
+                feedback.classList.remove('border-[color:var(--primary-color)]', 'bg-green-50');
+            }
+            feedback.classList.remove('hidden');
+            nextButton.disabled = false;
+            
+            displayComparisonChart(question.data);
+        }
+
+        // --- Chart Generation Function (Pie Chart) ---
+        function displayComparisonChart(data) {
+            const chartContainer = document.getElementById('chart-container');
+            const pieChartWrapper = document.getElementById('chart-pie-wrapper');
+            const chartLegendDiv = document.getElementById('chart-legend');
+            const chartTitle = document.getElementById('chart-title');
+            const chartTotalValue = document.getElementById('chart-total-value');
+            
+            // rendering it back to the symbol, [#get rid of the entire symbol??]
+            const displayedMetric = data.metric.replace(/&micro;/g, 'µ'); 
+
+            const val1 = data.valA;
+            const val2 = data.valB;
+            const food1 = data.foodA;
+            const food2 = data.foodB;
+            
+            //  nummer formatten
+            const formatValue = (value) => {
+                if (value === null || typeof value !== 'number') return 'N/A';
+                if (Math.abs(value) < 1e-6) return '0.0000'; 
+                return value.toFixed(4); 
+            };
+            if (typeof val1 !== 'number' || typeof val2 !== 'number') {
+                chartContainer.classList.add('hidden');
+                return;
+            }
+            const totalSum = val1 + val2;
+            if (totalSum === 0) {
+                chartContainer.classList.remove('hidden');
+                chartTitle.innerHTML = `Data Comparison: ${displayedMetric}`; 
+                chartTotalValue.textContent = `Total Sum: ${formatValue(totalSum)}`; 
+                pieChartWrapper.innerHTML = `<p class="text-center text-gray-500 text-md">Both values are 0.0000</p>`;
+                chartLegendDiv.innerHTML = '';
+                return;
+            }
+
+            // 3. Calculate Percentages and Angle (voor de chart)
+            const percent1 = (val1 / totalSum) * 100;
+            const percent2 = (val2 / totalSum) * 100;
+            const angle1 = (percent1 / 100) * 360; 
+            
+            // 4. Winning food 
+            const isFood1Winner = val1 >= val2; 
+            
+            //Colours
+            const color1 = isFood1Winner ? 'var(--primary-color)' : 'var(--accent-color)';
+            const color2 = isFood1Winner ? 'var(--accent-color)' : 'var(--primary-color)'; 
+            const winnerName = isFood1Winner ? food1 : food2;
+            const winnerValue = isFood1Winner ? val1 : val2;
+            const winnerPercent = isFood1Winner ? percent1 : percent2;
+            const loserName = !isFood1Winner ? food1 : food2;
+            const loserValue = !isFood1Winner ? val1 : val2;
+            const loserPercent = !isFood1Winner ? percent1 : percent2;
+            
+            // Making the pie-chart if we want different colours change above don't change here
+            const pieStyle = `
+                background: conic-gradient(
+                    ${color1} ${angle1}deg, 
+                    ${color2} 0
+                );
+            `;
+            chartTitle.innerHTML = `Proportional Comparison: ${displayedMetric}`; 
+            chartTotalValue.textContent = `Total Sum (${displayedMetric}): ${formatValue(totalSum)}`; 
+
+            pieChartWrapper.innerHTML = `
+                <div class="pie-chart-container w-[180px] h-[180px] border-radius-50 shadow-md" style="${pieStyle}"></div>
+            `;
+            chartLegendDiv.innerHTML = `
+                <div class="legend-item">
+                    <div class="legend-color primary"></div>
+                    <div>
+                        <span class="font-bold text-gray-700">${winnerName}</span>
+                        <span class="text-sm text-gray-600 ml-2">(${Math.round(winnerPercent)}% - ${formatValue(winnerValue)})</span>
+                    </div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color accent"></div>
+                    <div>
+                        <span class="font-bold text-gray-700">${loserName}</span>
+                        <span class="text-sm text-gray-600 ml-2">(${Math.round(loserPercent)}% - ${formatValue(loserValue)})</span>
+                    </div>
+                </div>
+            `;
+            chartContainer.classList.remove('hidden');
+        }
+
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            showQuestion();
+        }
+        function showResults() {
+            document.getElementById('question-screen').classList.add('hidden');
+            document.getElementById('results-screen').classList.remove('hidden');
+            document.getElementById('final-score').textContent = `${score} / ${currentQuizQuestions.length}`;
+        }
+        function resetToStartScreen() {
+            currentQuestionIndex = 0;
+            score = 0;
+            currentQuizQuestions = [];
+            selectedMetrics = [];
+            totalQuestions = 10; // Should we do 10 as display or can we like go back
+
+            document.getElementById('start-screen').classList.remove('hidden');
+            document.getElementById('intro-block').classList.remove('hidden');
+            document.getElementById('quiz-container').classList.add('hidden');
+            document.getElementById('results-screen').classList.add('hidden');
+            document.getElementById('metric-selection-screen').classList.add('hidden');
+            document.querySelectorAll('.metric-toggle').forEach(btn => btn.classList.remove('selected'));
+        }
+
+        document.getElementById('next-button').addEventListener('click', nextQuestion);
+        
+        // Quiz building
+
+        function populateBuilderDropdowns() {
+            const foodNames = allData.map(d => d[FOOD_NAME_KEY]).sort();
+            const foodDatalist = document.getElementById('food-names-list');
+            foodDatalist.innerHTML = ''; 
+            foodNames.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                foodDatalist.appendChild(option);
+            });
+            const metricSelect = document.getElementById('builder-metric');
+            metricSelect.innerHTML = '<option value="">--- Select Metric ---</option>';
+            ALL_METRICS.forEach(metric => {
+                const option = document.createElement('option');
+                option.value = metric;
+                option.textContent = metric.replace(/&micro;/g, 'µ');
+                metricSelect.appendChild(option);
+            });
+            updateCustomQuizListDisplay();
+        }
+        function showQuizBuilder() {
+            if (allData.length > 0 && document.getElementById('builder-metric').options.length <= 1) {
+                populateBuilderDropdowns();
+            }
+            updateCustomQuizListDisplay();
+            document.getElementById('quiz-builder-modal').classList.remove('hidden');
+        }
+        function updateCustomQuizListDisplay() {
+            const listDiv = document.getElementById('custom-quiz-questions-list');
+            const startButton = document.getElementById('start-custom-build-quiz');
+
+
+            if (customQuizQuestions.length === 0) {
+                listDiv.innerHTML = '<p class="text-gray-500 text-center pt-8">Custom Quiz: 0 questions added. Build yours!</p>';
+                startButton.disabled = true;
+            } else {
+                let html = `<p class="font-semibold mb-3 text-gray-800">Custom Quiz: ${customQuizQuestions.length} questions added.</p><ul class="list-disc list-inside space-y-2">`;
+                customQuizQuestions.forEach((q, index) => {
+                    // The information is gotten from here
+                    const questionTextSnippet = q.text
+                        .replace('Which item, ', '')
+                        .replace(' or ', ' vs ')
+                        .replace(', has a higher value for', ` (${q.data.metric.replace(/&micro;/g, 'µ')}): `)
+                        .replace('?', '');
+                    
+                    html += `<li class="text-gray-700"><strong>${index + 1}.</strong> ${questionTextSnippet}</li>`;
+                });
+                html += '</ul>';
+                listDiv.innerHTML = html;
+                startButton.disabled = false;
+            }
+        }
+        function createCustomQuizQuestion() {
+            // Get value from input fields
+            const foodName1 = document.getElementById('builder-food1').value.trim();
+            const foodName2 = document.getElementById('builder-food2').value.trim();
+            const metric = document.getElementById('builder-metric').value.trim();
+            // A few restrictions. First, actually selecting 2
+            // second make sure they are different
+            //anything else?
+            if (!foodName1 || !foodName2 || !metric) {
+                alert("Please select two food items and a metric before adding a question.");
+                return;
+            }
+            if (foodName1 === foodName2) {
+                alert("Please select two *different* food items to compare.");
+                return;
+            }
+            const isValidFood1 = allData.some(d => d[FOOD_NAME_KEY] === foodName1);
+            const isValidFood2 = allData.some(d => d[FOOD_NAME_KEY] === foodName2);
+
+            if (!isValidFood1 || !isValidFood2) {
+                alert("One or both food items entered are invalid. Please select a food item from the list of suggestions.");
+                return;
+            }
+
+
+            const food1 = allData.find(d => d[FOOD_NAME_KEY] === foodName1);
+            const food2 = allData.find(d => d[FOOD_NAME_KEY] === foodName2);
+
+
+
+
+            const newQuestion = createSingleQuestion(food1, food2, metric);
+            if (newQuestion) {
+                newQuestion.isCustom = true; 
+                customQuizQuestions.push(newQuestion);
+                updateCustomQuizListDisplay();
+                document.getElementById('builder-food1').value = '';
+                document.getElementById('builder-food2').value = '';
+                document.getElementById('builder-metric').value = '';
+                alert(`Question added successfully! Total questions: ${customQuizQuestions.length}`);
+            } else {
+                alert(`Cannot create a meaningful question: The values for ${metric.replace(/&micro;/g, 'µ')} are too similar (or zero). Please select a different metric or food combination.`);
+            }
+        }
+        
+        function clearCustomQuiz() {
+            if (confirm("Are you sure you want to clear all questions from the custom quiz?")) {
+                customQuizQuestions = [];
+                updateCustomQuizListDisplay();
+            }
+        }
+        
+        function startCustomQuizFromBuilder() {
+            if (customQuizQuestions.length > 0) {
+                document.getElementById('quiz-builder-modal').classList.add('hidden');
+                startQuiz('Custom Build', ALL_METRICS); 
+            } else {
+                alert("Please add at least one question to the custom quiz before starting.");
+            }
+        }
+
+
+		// Navigation (REPEAT ON EVERY PAGE PLEASE. ALSO FOR NEW ONES)
+
+		function createNavbar() {
+  const navLinks = [
+  { name: 'Home',            href: 'index.html',                          icon: 'fa-house' },
+  { name: 'Food Matrix',     href: 'food_explorer_dashboard.html',        icon: 'fa-table' },
+  { name: 'Food Comparison', href: 'comparison_dashboard_final_v3Clean.html', icon: 'fa-chart-bar' },
+  { name: 'NutriSubstitutes',href: 'substitution_dashboard.html',         icon: 'fa-exchange-alt' },
+  { name: 'Quiz',            href: 'quiz.html',                           icon: 'fa-clipboard-question' },
+  { name: 'Range Filter',    href: 'semantic_filter.html',                 icon: 'fa-filter' },
+  { name: 'About Us',        href: 'about_us.html',                        icon: 'fa-circle-info' }
+];
+
+
+  // separate NEVO links for dropdown
+  const nevoLinks = [
+    { name: 'Dutch Food Composition Database', href: 'https://www.rivm.nl/en/dutch-food-composition-database' },
+    { name: 'Life Cycle Analysis database', href: 'https://www.rivm.nl/en/food-and-nutrition/sustainable-food/environmental-impact-of-food-products' }
+  ];
+
+  const path = window.location.pathname;
+  const desktopNav = document.getElementById('desktop-nav');
+  const mobileNav  = document.getElementById('mobile-menu-links');
+  if (!desktopNav || !mobileNav) return;
+
+  desktopNav.innerHTML = '';
+  mobileNav.innerHTML  = '';
+
+  // build normal links
+  navLinks.forEach(link => {
+    const isCurrent = path.endsWith('/' + link.href) || path.endsWith(link.href) ||
+      (link.name === 'Home' && (path.endsWith('index.html') || path === '/' || path === ''));
+
+    const linkClass = isCurrent
+      ? 'primary-text border-b-2 border-current px-3 py-2 text-sm font-medium transition duration-150'
+      : 'text-gray-600 hover:primary-text border-b-2 border-transparent hover:border-current px-3 py-2 text-sm font-medium transition duration-150';
+
+    const mobileClass = isCurrent
+      ? 'block primary-text bg-gray-50 px-3 py-2 rounded-md text-base font-medium'
+      : 'block text-gray-700 hover:primary-text hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium';
+
+    desktopNav.innerHTML += `
+      <a href="${link.href}" class="${linkClass}">
+        <i class="fa-solid ${link.icon} mr-1"></i>${link.name}
+      </a>`;
+
+    mobileNav.innerHTML += `
+      <a href="${link.href}" class="${mobileClass}">
+        <i class="fa-solid ${link.icon} mr-2"></i>${link.name}
+      </a>`;
+  });
+
+  // add NEVO dropdown (desktop)
+  const nevoDropdown = document.createElement('div');
+  nevoDropdown.className = "relative group";
+  nevoDropdown.innerHTML = `
+    <button class="text-gray-600 hover:primary-text border-b-2 border-transparent hover:border-current px-3 py-2 text-sm font-medium transition duration-150 flex items-center">
+      <i class="fa-solid fa-arrow-up-right-from-square mr-1"></i> Visit RIVM
+      <i class="fa-solid fa-caret-down ml-1"></i>
+    </button>
+    <div class="absolute hidden group-hover:block hover:block bg-white shadow-md rounded-md top-full left-0 z-20">
+
+      ${nevoLinks.map(l => `
+        <a href="${l.href}" target="_blank" rel="noopener noreferrer"
+           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 whitespace-nowrap">
+          ${l.name}
+        </a>`).join('')}
+    </div>
+  `;
+  desktopNav.appendChild(nevoDropdown);
+
+  // add NEVO section (mobile)
+  const mobileNEVO = `
+    <div class="mt-2 border-t border-gray-200">
+      <span class="block px-3 py-2 text-gray-500 text-xs font-semibold">Visit NEVO</span>
+      ${nevoLinks.map(l => `
+        <a href="${l.href}" target="_blank" rel="noopener noreferrer"
+           class="block text-gray-700 hover:primary-text hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium">
+          ${l.name}
+        </a>`).join('')}
+    </div>
+  `;
+  mobileNav.innerHTML += mobileNEVO;
+}
+
+
+		// Make the navbar--> done here below 
+		window.onload = function() {
+		    createNavbar();
+            const menuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            if(menuButton) {
+                menuButton.addEventListener('click', () => {
+                    const isExpanded = menuButton.getAttribute('aria-expanded') === 'true' || false;
+                    menuButton.setAttribute('aria-expanded', !isExpanded);
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+            loadAndParseCSV(CSV_FILE_PATH);
+		};
+    </script>
+</body>
+</html>

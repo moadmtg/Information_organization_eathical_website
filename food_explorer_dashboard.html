@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Insight Platform - Data Explorer</title>
+    
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#34D399", 
+                        "background-light": "#EDF5EC",
+                        "background-dark": "#1F2937",
+                        "card-light": "#FFFFFF",
+                        "card-dark": "#374151",
+                        "text-light": "#111827",
+                        "text-dark": "#F9FAFB",
+                        "text-secondary-light": "#6B7280",
+                        "text-secondary-dark": "#9CA3AF"
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
+                    },
+                },
+            },
+        };
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+    
+    <style>
+        /* Old custom colors remain for elements that still use them (nav, footer, titles) */
+        :root {
+            --primary-color: #68b97d; 
+            --accent-color: #f77894; 
+            --secondary-color: #5d5dff;
+        }
+
+        .primary-bg { background-color: var(--primary-color); }
+        .primary-text { color: var(--primary-color); } 
+        .accent-text { color: var(--accent-color); }
+        .secondary-text { color: var(--secondary-color); }
+
+        .nav-link { 
+            @apply text-gray-600 hover:primary-text border-b-2 border-transparent hover:border-current px-3 py-2 text-sm font-medium transition duration-150;
+        }
+        .nav-link.current {
+            @apply primary-text border-b-2 border-current;
+        }
+
+        .responsive-table {
+            @apply min-w-full divide-y divide-gray-200 shadow-lg rounded-xl;
+        }
+        .responsive-table thead th {
+            @apply px-4 py-3 bg-gray-50 text-left text-xs font-bold text-gray-600 uppercase tracking-wider;
+        }
+        .responsive-table tbody tr {
+            @apply bg-white hover:bg-gray-50 transition duration-150;
+        }
+        .responsive-table td {
+            @apply px-4 py-3 whitespace-nowrap text-sm text-gray-800;
+        }
+        
+        /* Mobile-specific table styles */
+        @media screen and (max-width: 768px) {
+            .responsive-table thead {
+                display: none;
+            }
+            .responsive-table, .responsive-table tbody, .responsive-table tr, .responsive-table td {
+                display: block;
+                width: 100%;
+            }
+            .responsive-table tr {
+                @apply mb-4 border border-gray-200 rounded-lg shadow-sm;
+            }
+            .responsive-table td {
+                @apply text-right relative pl-40 border-none;
+                padding-left: 10rem;
+            }
+            .responsive-table td::before {
+                content: attr(data-label);
+                @apply absolute left-0 w-36 font-semibold text-gray-600 text-left;
+            }
+            .food-name-cell {
+                @apply text-lg font-extrabold primary-text text-right;
+            }
+        }
+        
+        /* Style for sidebar transition */
+        .sidebar {
+            transition: transform 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark">
+
+    <header class="bg-white shadow-md sticky top-0 z-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="index.html" class="flex items-center space-x-2"> 
+                    <i class="fa-solid fa-seedling primary-text text-2xl"></i>
+                    <span class="text-2xl font-extrabold text-gray-800">Eathical</span>
+                </a>
+                <nav id="desktop-nav" class="hidden sm:ml-6 sm:flex sm:space-x-4 items-center"></nav>
+                <button id="mobile-menu-button" class="sm:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:primary-text" aria-expanded="false">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <div id="mobile-menu" class="hidden sm:hidden bg-white shadow-lg">
+            <div id="mobile-menu-links" class="pt-2 pb-3 space-y-1"></div>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto p-4 md:p-8">
+
+        <section id="tile-view" class="hidden">
+            <h1 class="text-3xl font-extrabold text-text-light dark:text-text-dark mb-2 accent-text">
+                Choose a Food Group 
+            </h1>
+            <p class="text-text-secondary-light dark:text-text-secondary-dark mb-8">
+                Select a food group to explore detailed environmental and nutritional data.
+            </p>
+            <div id="food-group-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <p class="text-gray-500">Loading food groups...</p>
+            </div>
+        </section>
+
+        <section id="explorer-view" class="hidden">
+            
+            <div class="flex justify-between items-start mb-4 flex-col sm:flex-row">
+                <div>
+                    <h1 class="text-3xl font-extrabold text-black mb-2">
+                    <a href="food_explorer_dashboard.html" class="text-black hover:underline">Food Data Explorer</a>
+                    <span class="mx-2 text-gray-400">/</span>
+                    <span id="group-title" class="text-black"></span>
+                    </h1>
+                    <p id="group-subtitle" class="text-text-secondary-light dark:text-text-secondary-dark mb-4 sm:mb-0">
+                        Filter, sort, and view the detailed environmental and nutritional data.
+                    </p>
+                </div>
+                <a href="food_explorer_dashboard.html" class="flex items-center px-4 py-2 primary-bg hover:opacity-90 text-white font-semibold rounded-md shadow-md transition duration-150 primary-bg whitespace-nowrap mt-4 sm:mt-0">
+                    <i class="fa-solid fa-arrow-left mr-2"></i> Back to Groups
+                </a>
+            </div>
+
+            <div class="bg-card-light dark:bg-card-dark p-6 rounded-xl shadow-lg mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                <div class="md:col-span-2 flex space-x-4">
+                    <div class="flex-grow">
+                        <label for="search-input" class="block text-sm font-medium text-text-light dark:text-text-dark mb-1">Search Food Item:</label>
+                        <input type="text" id="search-input" oninput="filterAndRenderTable()" placeholder="E.g., Rice, Cheese..." class="mt-1 block w-full pl-3 pr-4 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-color focus:border-primary-color sm:text-sm rounded-md shadow-sm">
+                    </div>
+                    
+                    <div class="self-end">
+                        <label class="block text-sm font-medium text-text-light dark:text-text-dark mb-1 invisible">Columns</label>
+                         <button id="toggle-sidebar-button" onclick="toggleSidebar()" class="flex items-center px-4 py-2 primary-bg hover:opacity-90 text-white font-semibold rounded-md shadow-md transition duration-150 primary-bg whitespace-nowrap">
+                            <i class="fa-solid fa-sliders-h mr-2"></i> Select Columns
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="bg-card-light dark:bg-card-dark p-4 md:p-6 rounded-xl shadow-lg">
+                <h2 class="text-xl font-bold mb-4 text-primary border-b pb-2">Filtered Results</h2>
+                <div id="data-table-wrapper" class="overflow-x-auto">
+                    <p class="text-gray-500">Loading food data...</p>
+                </div>
+            </div>
+            
+            <div id="column-sidebar" class="sidebar fixed top-0 right-0 h-full w-80 bg-card-light dark:bg-card-dark shadow-2xl z-50 transform translate-x-full overflow-y-auto pt-16">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-6 border-b pb-3">
+                        <h3 class="text-xl font-bold text-text-light dark:text-text-dark">Column Selection</h3>
+                        <button onclick="toggleSidebar()" class="text-gray-500 hover:text-gray-700">
+                            <i class="fa-solid fa-times text-2xl"></i>
+                        </button>
+                    </div>
+                    <div id="column-checkboxes" class="space-y-4">
+                        </div>
+                </div>
+            </div>
+            <div id="sidebar-overlay" onclick="toggleSidebar()" class="hidden fixed inset-0 bg-black opacity-50 z-40"></div>
+
+        </section>
+
+    </main>
+	
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white py-8 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <p class="text-sm">
+        © <span id="year"></span> Eathical — Food Impact Insights
+      </p>
+    </div>
+  </footer>
+  
+    
+    <script>
+        // --- Configuration and Constants ---
+        const CSV_FILE_PATH = 'DataClean.csv';
+        let parsedData = [];
+        let sortColumn = 'Food name';
+        let sortDirection = 1; // 1 = ascending (A-Z/Low-High), -1 = descending (Z-A/High-Low)
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const selectedGroup = urlParams.get('group'); 
+
+        
+        
+        // Main list of all possible fields (columns in the CSV)
+        const ALL_DATA_FIELDS = [
+            // --- Mandatory Fields (not selectable, always visible) ---
+            { key: 'Food name', label: 'Food Item', unit: '', isSortable: true, isText: true, color: 'font-bold', isSelectable: false, isMandatory: true }, 
+            { key: 'Food group', label: 'Group', unit: '', isSortable: true, isText: true, isSelectable: false, isMandatory: true }, 
+            
+            // --- Environmental Impact ---
+            { group: 'Environmental Impact', key: 'Global warming kg CO2', label: 'CO2 Impact', unit: 'kg CO2', isSortable: true, color: 'text-green-600', isSelectable: true, defaultSelected: true },
+            { group: 'Environmental Impact', key: 'Terrestrial acidification kg SO2', label: 'Acidification', unit: 'kg SO2', isSortable: true, color: 'text-purple-600', isSelectable: true, defaultSelected: false },
+            { group: 'Environmental Impact', key: 'Freshwater eutrophication kg P', label: 'Freshwater Eutrophication', unit: 'kg P', isSortable: true, color: 'text-teal-600', isSelectable: true, defaultSelected: false },
+            { group: 'Environmental Impact', key: 'Marine eutrophication kg N', label: 'Marine Eutrophication', unit: 'kg N', isSortable: true, color: 'text-cyan-600', isSelectable: true, defaultSelected: false },
+            { group: 'Environmental Impact', key: 'Land use m2a crop', label: 'Land Use', unit: 'm²a', isSortable: true, color: 'text-yellow-800', isSelectable: true, defaultSelected: false },
+            { group: 'Environmental Impact', key: 'Water consumption m3', label: 'Water Consumption', unit: 'm³', isSortable: true, color: 'text-blue-600', isSelectable: true, defaultSelected: true },
+
+            // --- Macro Nutrients (Macros & Energy) ---
+            { group: 'Macro Nutrients', key: 'Energy (kcal)', label: 'Energy (kcal)', unit: 'kcal', isSortable: true, color: 'text-orange-500', isSelectable: true, defaultSelected: true },
+            { group: 'Macro Nutrients', key: 'Energy (kJ)', label: 'Energy (kJ)', unit: 'kJ', isSortable: true, color: 'text-orange-400', isSelectable: true, defaultSelected: false },
+            { group: 'Macro Nutrients', key: 'Protein (g)', label: 'Protein', unit: 'g', isSortable: true, color: 'text-red-600', isSelectable: true, defaultSelected: true },
+            { group: 'Macro Nutrients', key: 'Fat (g)', label: 'Total Fat', unit: 'g', isSortable: true, color: 'text-yellow-600', isSelectable: true, defaultSelected: false },
+            { group: 'Macro Nutrients', key: 'Fatty acids (g)', label: 'Fatty Acids', unit: 'g', isSortable: true, color: 'text-yellow-700', isSelectable: true, defaultSelected: false },
+            { group: 'Macro Nutrients', key: 'Carbohydrates (g)', label: 'Carbohydrates', unit: 'g', isSortable: true, color: 'text-green-500', isSelectable: true, defaultSelected: false },
+            { group: 'Macro Nutrients', key: 'Sugars (g)', label: 'Sugars', unit: 'g', isSortable: true, color: 'text-pink-600', isSelectable: true, defaultSelected: true },
+            { group: 'Macro Nutrients', key: 'Fiber (g)', label: 'Fiber', unit: 'g', isSortable: true, color: 'text-indigo-600', isSelectable: true, defaultSelected: true },
+            { group: 'Macro Nutrients', key: 'Alcohol (g)', label: 'Alcohol', unit: 'g', isSortable: true, color: 'text-gray-500', isSelectable: true, defaultSelected: false },
+
+            // --- Minerals and Salts ---
+            { group: 'Minerals & Salts', key: 'Sodium (mg)', label: 'Sodium', unit: 'mg', isSortable: true, color: 'text-gray-500', isSelectable: true, defaultSelected: false },
+            { group: 'Minerals & Salts', key: 'Potassium (mg)', label: 'Potassium', unit: 'mg', isSortable: true, color: 'text-gray-700', isSelectable: true, defaultSelected: false },
+            { group: 'Minerals & Salts', key: 'Calcium (mg)', label: 'Calcium', unit: 'mg', isSortable: true, color: 'text-blue-400', isSelectable: true, defaultSelected: false },
+            { group: 'Minerals & Salts', key: 'Phosphorus (mg)', label: 'Phosphorus', unit: 'mg', isSortable: true, color: 'text-gray-600', isSelectable: true, defaultSelected: false },
+            { group: 'Minerals & Salts', key: 'Magnesium (mg)', label: 'Magnesium', unit: 'mg', isSortable: true, color: 'text-purple-400', isSelectable: true, defaultSelected: false },
+            { group: 'Minerals & Salts', key: 'Iron (mg)', label: 'Iron', unit: 'mg', isSortable: true, color: 'text-red-500', isSelectable: true, defaultSelected: false },
+            { group: 'Minerals & Salts', key: 'Copper (mg)', label: 'Copper', unit: 'mg', isSortable: true, color: 'text-orange-700', isSelectable: true, defaultSelected: false },
+            { group: 'Minerals & Salts', key: 'Zinc(mg)', label: 'Zinc', unit: 'mg', isSortable: true, color: 'text-yellow-600', isSelectable: true, defaultSelected: false },
+            { group: 'Minerals & Salts', key: 'Chloride (mg)', label: 'Chloride', unit: 'mg', isSortable: true, color: 'text-blue-500', isSelectable: true, defaultSelected: false },
+            { group: 'Minerals & Salts', key: 'Selenium (µg)', label: 'Selenium', unit: 'µg', isSortable: true, color: 'text-gray-400', isSelectable: true, defaultSelected: false },
+            { group: 'Minerals & Salts', key: 'Iodine (µg)', label: 'Iodine', unit: 'µg', isSortable: true, color: 'text-pink-500', isSelectable: true, defaultSelected: false },
+
+            // --- Vitamins ---
+            { group: 'Vitamins', key: 'Vitamin C (mg)', label: 'Vitamin C', unit: 'mg', isSortable: true, color: 'text-orange-500', isSelectable: true, defaultSelected: false },
+            { group: 'Vitamins', key: 'Vitamin D (µg)', label: 'Vitamin D', unit: 'µg', isSortable: true, color: 'text-yellow-500', isSelectable: true, defaultSelected: false },
+            { group: 'Vitamins', key: 'Vitamin E (mg)', label: 'Vitamin E', unit: 'mg', isSortable: true, color: 'text-green-500', isSelectable: true, defaultSelected: false },
+            { group: 'Vitamins', key: 'Vitamin K (µg)', label: 'Vitamin K', unit: 'µg', isSortable: true, color: 'text-green-700', isSelectable: true, defaultSelected: false },
+            { group: 'Vitamins', key: 'Vitamin B1 (mg)', label: 'Vitamin B1 (Thiamine)', unit: 'mg', isSortable: true, color: 'text-red-300', isSelectable: true, defaultSelected: false },
+            { group: 'Vitamins', key: 'Vitamin B2 (mg)', label: 'Vitamin B2 (Riboflavin)', unit: 'mg', isSortable: true, color: 'text-orange-300', isSelectable: true, defaultSelected: false },
+            { group: 'Vitamins', key: 'Vitamin B6 (mg)', label: 'Vitamin B6 (Pyridoxine)', unit: 'mg', isSortable: true, color: 'text-yellow-300', isSelectable: true, defaultSelected: false },
+            { group: 'Vitamins', key: 'Vitamin B12 (µg)', label: 'Vitamin B12 (Cobalamin)', unit: 'µg', isSortable: true, color: 'text-blue-300', isSelectable: true, defaultSelected: false },
+            { group: 'Vitamins', key: 'Vitamin B3 (mg)', label: 'Vitamin B3 (Niacin)', unit: 'mg', isSortable: true, color: 'text-purple-300', isSelectable: true, defaultSelected: false }
+        ];
+
+
+        const FOOD_GROUP_ICONS = {
+            "All Food": { icon: "utensils", color: "text-green-500" }, 
+            "Bread": { icon: "bread-slice", color: "text-yellow-600" }, 
+            "Beans, seeds, nuts": { icon: "seedling", color: "text-yellow-700" }, 
+            "Beverages (non-alcoholic)": { icon: "mug-hot", color: "text-blue-500" }, 
+            "Alcoholic beverages": { icon: "wine-glass", color: "text-orange-500" }, 
+            "Cereals and cereal products": { icon: "wheat-awn", color: "text-yellow-500" }, 
+            "Cold meat cuts": { icon: "bacon", color: "text-red-400" }, 
+            "Composite dishes": { icon: "bowl-food", color: "text-red-500" }, 
+            "Confectionery and sweet bread spreads": { icon: "ice-cream", color: "text-pink-400" }, 
+            "Dairy products": { icon: "cheese", color: "text-yellow-400" }, 
+            "Fats and oils": { icon: "oil-can", color: "text-yellow-800" }, 
+            "Fish and fishery products": { icon: "fish", color: "text-blue-400" }, 
+            "Fruits": { icon: "apple-whole", color: "text-red-500" }, 
+            "Meat and meat products": { icon: "drumstick-bite", color: "text-red-600" }, 
+            "Milk and milk products": { icon: "cow", color: "text-blue-200" }, 
+            "Mushrooms": { icon: "leaf", color: "text-green-700" }, 
+            "Potatoes and tubers": { icon: "egg", color: "text-yellow-800" }, 
+            "Savoury bread spreads": { icon: "bread-slice", color: "text-yellow-600" }, 
+            "Savoury sauces": { icon: "jar", color: "text-red-500" }, 
+            "Savoury snacks": { icon: "burger", color: "text-yellow-500" }, 
+            "Soups": { icon: "bowl-hot", color: "text-blue-600" }, 
+            "Sugar, sweets and sweet sauces": { icon: "candy-cane", color: "text-pink-300" }, 
+            "Vegetables": { icon: "carrot", color: "text-orange-500" }, 
+            "Nuts and seeds": { icon: "droplet", color: "text-yellow-800" }, 
+            "Eggs": { icon: "egg", color: "text-stone-300" }, 
+            "Cheese": { icon: "cheese", color: "text-yellow-500" }, 
+            "Fish, crustacean and shellfish": { icon: "fish", color: "text-blue-500" }, 
+            "Herbs and spices": { icon: "pepper-hot", color: "text-red-500" }, 
+            "Legumes": { icon: "bowl-rice", color: "text-yellow-800" }, 
+            "Meat and poultry": { icon: "drumstick-bite", color: "text-yellow-800" }, 
+            "Meat substitutes and dairy substitutes": { icon: "seedling", color: "text-green-500" }, 
+            "Non-alcoholic beverages": { icon: "whiskey-glass", color: "text-blue-500" }, 
+            "Pastry and biscuits": { icon: "cake-candles", color: "text-pink-500" },
+            // Default icons for groups not explicitly listed:
+            "Default": { icon: "utensils", color: "text-gray-500" } 
+        };
+
+        // --- Helper Function for Robust Comparison ---
+
+        /**
+         * Normalizes a group name for robust comparison.
+         * Removes ALL whitespace, commas, parentheses, quotes, hyphens, etc., and converts everything to lowercase.
+         */
+		function normalizeName(name) {
+		            if (!name) return "";
+		            return String(name)
+		                .replace(/[^a-zA-Z0-9]/g, '') 
+		                .toLowerCase();
+		        }
+
+        // --- Navigation and Utility Functions ---
+        
+        function getDietaryTag(foodGroup) {
+            if (!foodGroup) return 'Non-Vegan';
+            const group = String(foodGroup).toLowerCase();
+            if (group.includes('meat') || group.includes('beef') || group.includes('pork') || group.includes('poultry') || group.includes('chicken') || group.includes('cuts') || group.includes('offal')) {
+                return 'Non-Vegan'; 
+            }
+            if (group.includes('fish') || group.includes('mollusc') || group.includes('crustacean') || group.includes('seafood')) {
+                return 'Pescetarian'; 
+            }
+            if (group.includes('egg') || group.includes('dairy') || group.includes('cheese') || group.includes('milk') || group.includes('yoghurt')) {
+                return 'Vegetarian'; 
+            }
+            return 'Vegan';
+        }
+        
+        // Function to get the currently selected columns via checkboxes
+        function getDisplayedFields() {
+            const mandatoryFields = ALL_DATA_FIELDS.filter(f => f.isMandatory);
+            
+            // Get the keys of the selected checkboxes
+            const selectedKeys = Array.from(document.querySelectorAll('#column-checkboxes input[type="checkbox"]:checked'))
+                .map(checkbox => checkbox.value);
+
+            // Filter and sort the selectable fields based on their group and then label
+            const selectableFields = ALL_DATA_FIELDS.filter(f => f.isSelectable);
+            
+            const selectedFields = selectableFields.filter(f => selectedKeys.includes(f.key));
+            
+            // Combine and ensure mandatory fields come first
+            return mandatoryFields.concat(selectedFields);
+        }
+
+        // Function to toggle the sidebar visibility
+        function toggleSidebar() {
+            const sidebar = document.getElementById('column-sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const isHidden = sidebar.classList.contains('translate-x-full');
+
+            if (isHidden) {
+                sidebar.classList.remove('translate-x-full');
+                overlay.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden'); // Prevent main content from scrolling
+            } else {
+                sidebar.classList.add('translate-x-full');
+                overlay.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            }
+        }
+        
+        // Function to render the categorized checkboxes in the sidebar
+        function renderColumnCheckboxes() {
+            const container = document.getElementById('column-checkboxes');
+            if (!container) return;
+
+            container.innerHTML = '';
+            
+            // Group fields by their category
+            const groups = ALL_DATA_FIELDS.filter(f => f.isSelectable)
+                .reduce((acc, field) => {
+                    const groupName = field.group || 'Miscellaneous';
+                    if (!acc[groupName]) {
+                        acc[groupName] = [];
+                    }
+                    acc[groupName].push(field);
+                    return acc;
+                }, {});
+
+            let html = '';
+            // Iterate over the categories and generate HTML
+            for (const [groupName, fields] of Object.entries(groups)) {
+                html += `
+                    <div class="border-b border-gray-200 dark:border-gray-700 pb-2 mb-2">
+                        <h4 class="font-bold text-sm uppercase primary-text mb-2">${groupName}</h4>
+                        <div class="space-y-1">
+                `;
+                
+                // Sort fields within each group by label
+                fields.sort((a, b) => a.label.localeCompare(b.label)).forEach(field => {
+                    const id = `col-${field.key.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                    const isChecked = field.defaultSelected ? 'checked' : '';
+                    
+                    html += `
+                        <div class="flex items-center">
+                            <input id="${id}" type="checkbox" value="${field.key}" ${isChecked} onchange="filterAndRenderTable()" class="h-4 w-4 text-primary rounded border-gray-300 focus:ring-primary-color">
+                            <label for="${id}" class="ml-3 text-sm font-medium text-text-light dark:text-text-dark cursor-pointer">
+                                ${field.label} ${field.unit ? `(${field.unit})` : ''}
+                            </label>
+                        </div>
+                    `;
+                });
+
+                html += `</div></div>`;
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function createNavbar() {
+  const navLinks = [
+  { name: 'Home',            href: 'index.html',                          icon: 'fa-house' },
+  { name: 'Food Matrix',     href: 'food_explorer_dashboard.html',        icon: 'fa-table' },
+  { name: 'Food Comparison', href: 'comparison_dashboard_final_v3Clean.html', icon: 'fa-chart-bar' },
+  { name: 'NutriSubstitutes',href: 'substitution_dashboard.html',         icon: 'fa-exchange-alt' },
+  { name: 'Quiz',            href: 'quiz.html',                           icon: 'fa-clipboard-question' },
+  { name: 'Range Filter',    href: 'semantic_filter.html',                 icon: 'fa-filter' },
+  { name: 'About Us',        href: 'about_us.html',                        icon: 'fa-circle-info' }
+];
+
+
+  // separate NEVO links for dropdown
+  const nevoLinks = [
+    { name: 'Dutch Food Composition Database', href: 'https://www.rivm.nl/en/dutch-food-composition-database' },
+    { name: 'Life Cycle Analysis database', href: 'https://www.rivm.nl/en/food-and-nutrition/sustainable-food/environmental-impact-of-food-products' }
+  ];
+
+  const path = window.location.pathname;
+  const desktopNav = document.getElementById('desktop-nav');
+  const mobileNav  = document.getElementById('mobile-menu-links');
+  if (!desktopNav || !mobileNav) return;
+
+  desktopNav.innerHTML = '';
+  mobileNav.innerHTML  = '';
+
+  // build normal links
+  navLinks.forEach(link => {
+    const isCurrent = path.endsWith('/' + link.href) || path.endsWith(link.href) ||
+      (link.name === 'Home' && (path.endsWith('index.html') || path === '/' || path === ''));
+
+    const linkClass = isCurrent
+      ? 'primary-text border-b-2 border-current px-3 py-2 text-sm font-medium transition duration-150'
+      : 'text-gray-600 hover:primary-text border-b-2 border-transparent hover:border-current px-3 py-2 text-sm font-medium transition duration-150';
+
+    const mobileClass = isCurrent
+      ? 'block primary-text bg-gray-50 px-3 py-2 rounded-md text-base font-medium'
+      : 'block text-gray-700 hover:primary-text hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium';
+
+    desktopNav.innerHTML += `
+      <a href="${link.href}" class="${linkClass}">
+        <i class="fa-solid ${link.icon} mr-1"></i>${link.name}
+      </a>`;
+
+    mobileNav.innerHTML += `
+      <a href="${link.href}" class="${mobileClass}">
+        <i class="fa-solid ${link.icon} mr-2"></i>${link.name}
+      </a>`;
+  });
+
+  const nevoDropdown = document.createElement('div');
+  nevoDropdown.className = "relative group";
+  nevoDropdown.innerHTML = `
+    <button class="text-gray-600 hover:primary-text border-b-2 border-transparent hover:border-current px-3 py-2 text-sm font-medium transition duration-150 flex items-center">
+      <i class="fa-solid fa-arrow-up-right-from-square mr-1"></i> Visit RIVM
+      <i class="fa-solid fa-caret-down ml-1"></i>
+    </button>
+    <div class="absolute hidden group-hover:block hover:block bg-white shadow-md rounded-md top-full left-0 z-20">
+
+      ${nevoLinks.map(l => `
+        <a href="${l.href}" target="_blank" rel="noopener noreferrer"
+           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 whitespace-nowrap">
+          ${l.name}
+        </a>`).join('')}
+    </div>
+  `;
+  desktopNav.appendChild(nevoDropdown);
+
+  // add NEVO section (mobile)
+  const mobileNEVO = `
+    <div class="mt-2 border-t border-gray-200">
+      <span class="block px-3 py-2 text-gray-500 text-xs font-semibold">Visit NEVO</span>
+      ${nevoLinks.map(l => `
+        <a href="${l.href}" target="_blank" rel="noopener noreferrer"
+           class="block text-gray-700 hover:primary-text hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium">
+          ${l.name}
+        </a>`).join('')}
+    </div>
+  `;
+  mobileNav.innerHTML += mobileNEVO;
+}
+        
+        async function loadAndParseGroups(filePath) {
+            const grid = document.getElementById('food-group-grid');
+            grid.innerHTML = '<p class="text-gray-500">Loading food groups...</p>';
+
+            try {
+                const response = await fetch(filePath);
+                const text = await response.text();
+                const rows = text.trim().split('\n');
+                const headers = rows[0].split(';').map(h => h.trim());
+                
+                const foodGroupIndex = headers.findIndex(h => h.includes('Food group'));
+                if (foodGroupIndex === -1) {
+                    throw new Error("'Food group' column not found in CSV.");
+                }
+
+                const foodGroups = rows.slice(1)
+                    .map(row => row.split(';')[foodGroupIndex]?.replace(/"/g, '').trim())
+                    .filter(g => g && g !== 'Food group'); 
+
+                let uniqueGroups = [...new Set(foodGroups)].sort();
+                
+                if (uniqueGroups.length === 0) {
+                     grid.innerHTML = '<p class="text-red-500 font-bold">No food groups found.</p>';
+                     return;
+                }
+
+                grid.innerHTML = '';
+
+                const newTileClasses = 'bg-card-light dark:bg-card-dark rounded-lg shadow p-6 flex flex-col items-center justify-center text-center hover:shadow-lg transition-shadow cursor-pointer';
+                const allFoodMeta = FOOD_GROUP_ICONS["All Food"] || FOOD_GROUP_ICONS["Default"];
+
+                const allFoodTileHtml = `
+                    <a href="?group=All" class="${newTileClasses}" tabindex="0">
+                        <i class="fa-solid fa-${allFoodMeta.icon} text-4xl mb-3 ${allFoodMeta.color}"></i>
+                        <span class="font-medium text-text-light dark:text-text-dark">All Food</span>
+                    </a>
+                `;
+                grid.innerHTML += allFoodTileHtml;
+                uniqueGroups.forEach(groupName => {
+                    const groupMeta = FOOD_GROUP_ICONS[groupName] || FOOD_GROUP_ICONS["Default"];
+                    
+                    const tileHtml = `
+                        <a href="?group=${encodeURIComponent(groupName)}" class="${newTileClasses}" tabindex="0">
+                            <i class="fa-solid fa-${groupMeta.icon} text-4xl mb-3 ${groupMeta.color}"></i>
+                            <span class="font-medium text-text-light dark:text-text-dark">${groupName}</span>
+                        </a>
+                    `;
+                    grid.innerHTML += tileHtml;
+                });
+
+            } catch (error) {
+                console.error("Error loading or parsing CSV:", error);
+                grid.innerHTML = '<p class="text-red-500 font-bold">Error: Could not load food groups. Check if DataClean.csv exists.</p>';
+            }
+        }
+        
+        async function loadAndParseCSV(filePath) {
+            const tableWrapper = document.getElementById('data-table-wrapper');
+            try {
+                const response = await fetch(filePath);
+                const text = await response.text();
+                const rows = text.trim().split('\n');
+                const headers = rows[0].split(';').map(h => h.trim());
+
+                const foodNameHeader = headers.find(h => h.includes('Food name')) || 'Food name';
+                const foodGroupHeader = headers.find(h => h.includes('Food group')) || 'Food group';
+                
+                const data = rows.slice(1).map(row => {
+                    const values = row.split(';');
+                    const item = {};
+                    
+                    headers.forEach((key, i) => {
+                        let value = values[i];
+
+                        if (value !== undefined && value !== null) {
+                            
+                            value = value.replace(/"/g, '').replace(/\r/g, '').replace(/,/g, '.').trim(); 
+                            
+                            if (value.length > 0 && !isNaN(value)) {
+                                item[key] = parseFloat(value);
+                            } else if (value === '' || value.toUpperCase() === 'N/A') {
+                                item[key] = null;
+                            } else {
+                                item[key] = value;
+                            }
+                        } else {
+                            item[key] = null;
+                        }
+                    });
+                    
+                    item['Food name'] = item[foodNameHeader];
+                    
+                    const originalFoodGroup = item[foodGroupHeader] ? item[foodGroupHeader].trim() : null;
+                    item['Food group'] = originalFoodGroup;
+                    
+                    
+                    item['Normalized Group'] = normalizeName(originalFoodGroup);
+                    
+                    item.DietaryTag = getDietaryTag(item['Food group']);
+                    
+                    return item;
+                });
+                
+                parsedData = data.filter(item => item['Food name'] && item['Food group']);
+                
+                
+                const decodedGroup = selectedGroup ? decodeURIComponent(selectedGroup) : null;
+        
+        const groupLabel = (decodedGroup && decodedGroup !== 'All') ? decodedGroup : 'All Food';
+        document.getElementById('group-title').textContent = groupLabel;
+
+    if (decodedGroup && decodedGroup !== 'All') {
+        document.getElementById('group-subtitle').textContent =
+            `You are now viewing the environmental and nutritional data per 100 grams for the group: ${groupLabel}. Adjust the displayed columns and filters.`;
+    } else {
+        document.getElementById('group-subtitle').textContent =
+            `You are now viewing the environmental and nutritional data per 100 grams for all foodgroups. Adjust the displayed columns and filters.`;
+    }
+        const placeholderByGroup = {
+        'all food': 'E.g., rice, bread, cheese',
+        'alcoholic beverages': 'E.g., beer, wine, whisky',
+        'bread': 'E.g., bread, baguette, croissant',
+        'cereals and cereal products': 'E.g., oats, rice, pasta',
+        'cheese': 'E.g., cheddar, gouda, mozzarella',
+        'cold meat cuts': 'E.g., ham, salami, bacon',
+        'eggs': 'E.g., boiled egg, omelette, scrambled eggs',
+        'fats and oils': 'E.g., butter, olive oil, margarine',
+        'fish, crustacean and shellfish': 'E.g., salmon, tuna, shrimp',
+        'fruits': 'E.g., apples, bananas, berries',
+        'herbs and spices': 'E.g., basil, pepper, cinnamon',
+        'legumes': 'E.g., lentils, chickpeas, beans',
+        'meat and poultry': 'E.g., chicken, beef, pork',
+        'meat substitutes and dairy substitutes': 'E.g., tofu, soy milk, seitan',
+        'milk and milk products': 'E.g., milk, yogurt, cream',
+        'non-alcoholic beverages': 'E.g., coffee, tea, juice',
+        'nuts and seeds': 'E.g., almonds, peanuts, chia seeds',
+        'pastry and biscuits': 'E.g., cookies, croissant, cake',
+        'potatoes and tubers': 'E.g., potatoes, sweet potatoes, yam',
+        'savoury bread spreads': 'E.g., peanut butter, hummus, tapenade',
+        'savoury sauces': 'E.g., ketchup, soy sauce, mayonnaise',
+        'savoury snacks': 'E.g., chips, crackers, popcorn',
+        'sugar, sweets and sweet sauces': 'E.g., chocolate, candy, syrup',
+        'vegetables': 'E.g., broccoli, carrots, spinach'
+        };
+
+        const searchInputEl =
+        document.getElementById('search-input') ||
+        document.querySelector('input[placeholder]');
+
+        const gKey = (decodedGroup || '').toLowerCase().trim();
+
+        if (searchInputEl) {
+        if (gKey && placeholderByGroup[gKey]) {
+            searchInputEl.placeholder = placeholderByGroup[gKey];
+        } else if (decodedGroup && decodedGroup !== 'All') {
+            searchInputEl.placeholder = `Search in ${decodedGroup}…`;
+        } else {
+            searchInputEl.placeholder = 'Search all groups…';
+        }
+        }
+
+
+                
+                renderColumnCheckboxes(); // Populate the new sidebar
+                filterAndRenderTable(); // Render the initial table
+
+            } catch (error) {
+                console.error("Error loading or parsing CSV:", error);
+                tableWrapper.innerHTML = 
+                    '<p class="text-red-600 font-bold">Error: Could not load or parse food data. Details: ' + error.message + '</p>';
+            }
+        }
+        
+        // --- Table Display and Sorting ---
+        
+        function changeSort(columnKey) {
+            if (sortColumn === columnKey) {
+                sortDirection = -sortDirection; // Toggle direction
+            } else {
+                sortColumn = columnKey;
+                sortDirection = 1; // Default ascending for new columns
+            }
+            filterAndRenderTable();
+        }
+
+        function filterAndRenderTable() {
+            if (parsedData.length === 0) {
+                document.getElementById('data-table-wrapper').innerHTML = '<p class="text-gray-500">No food data loaded to filter.</p>';
+                return;
+            }
+
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            
+            // 1. Prepare the group name to filter by (from the URL)
+            const decodedGroup = selectedGroup ? decodeURIComponent(selectedGroup) : null;
+            
+            // NORMALIZE THE URL GROUP FOR COMPARISON
+            const normalizedGroupToFilter = decodedGroup && decodedGroup !== 'All' 
+                                                 ? normalizeName(decodedGroup) 
+                                                 : null; 
+
+            // 2. Filter the data
+            let filteredData = parsedData.filter(item => {
+                // Search Term Filter
+                const matchesSearch = item['Food name']?.toLowerCase().includes(searchTerm) || false;
+                if (!matchesSearch) return false;
+
+                // Group Filter - USE THE NORMALIZED GROUP NAME FOR COMPARISON
+                if (normalizedGroupToFilter) {
+                    // Compare the normalized URL group with the normalized CSV group.
+                    if (item['Normalized Group'] !== normalizedGroupToFilter) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            // 3. Sort the data 
+            filteredData.sort((a, b) => {
+                const valA = a[sortColumn];
+                const valB = b[sortColumn];
+                
+                // Logic for null values and sorting
+                const isANumber = typeof valA === 'number';
+                const isBNumber = typeof valB === 'number';
+
+                if (valA === null && valB !== null) return sortDirection * 1;
+                if (valA !== null && valB === null) return sortDirection * -1;
+                if (valA === null && valB === null) return 0;
+                
+                if (typeof valA === 'string' && typeof valB === 'string') {
+                    return sortDirection * valA.localeCompare(valB);
+                }
+                
+                if (isANumber && isBNumber) {
+                    return sortDirection * (valA - valB);
+                } 
+
+                return 0; // Fallback
+            });
+            
+            // 4. Render the table
+            renderTableHtml(filteredData);
+        }
+
+        function renderTableHtml(data) {
+            const tableWrapper = document.getElementById('data-table-wrapper');
+            // Use the selected fields from the checkboxes
+            const displayedFields = getDisplayedFields(); 
+
+            if (data.length === 0) {
+                tableWrapper.innerHTML = '<p class="text-gray-500">No results found for the selected filters.</p>';
+                return;
+            }
+
+            let tableHtml = `<table class="responsive-table">
+                                <thead>
+                                    <tr>`;
+            
+            // Header Row
+            displayedFields.forEach(field => {
+                let sortIndicator = '';
+                let thClass = 'cursor-pointer';
+                
+                if (field.isSortable) {
+                    if (field.key === sortColumn) {
+                        thClass += ' primary-text';
+                        sortIndicator = sortDirection === 1 
+                            ? '<i class="fas fa-sort-up ml-1"></i>' 
+                            : '<i class="fas fa-sort-down ml-1"></i>';
+                    } else {
+                        sortIndicator = '<i class="fas fa-sort ml-1 text-gray-400"></i>';
+                    }
+                } else {
+                    thClass = '';
+                }
+
+                tableHtml += `
+                    <th onclick="${field.isSortable ? `changeSort('${field.key}')` : ''}" class="${thClass}">
+                        ${field.label} ${sortIndicator}
+                    </th>
+                `;
+            });
+            tableHtml += `</tr></thead><tbody>`;
+
+            // Data Rows
+            data.forEach(item => {
+                tableHtml += `<tr>`;
+                
+                displayedFields.forEach(field => {
+                    const rawValue = item[field.key];
+                    let displayValue = '';
+                    let cellClass = '';
+
+                    const isMissing = rawValue === null || (typeof rawValue === 'string' && rawValue.toUpperCase() === 'N/A') || rawValue === undefined || rawValue === '';
+
+                    if (isMissing) {
+                        displayValue = 'N/A';
+                        cellClass = 'text-gray-400 italic';
+                    } else if (typeof rawValue === 'number') {
+                        // Use 3 decimals for very small values, 2 otherwise
+                        const decimals = Math.abs(rawValue) < 0.1 ? 3 : 2; 
+                        displayValue = `${rawValue.toFixed(decimals)} ${field.unit}`;
+                        cellClass = field.color || 'text-gray-700';
+                    } else {
+                        displayValue = rawValue;
+                        if (field.key === 'Food name') cellClass += ' food-name-cell';
+                    }
+
+                    tableHtml += `
+                        <td data-label="${field.label}" class="${cellClass}">
+                            ${displayValue}
+                        </td>
+                    `;
+                });
+
+                tableHtml += `</tr>`;
+            });
+
+            tableHtml += `</tbody></table>`;
+            tableWrapper.innerHTML = tableHtml;
+        }
+
+        // --- Initialization ---
+
+        function initializePage() {
+            const tileView = document.getElementById('tile-view');
+            const explorerView = document.getElementById('explorer-view');
+            
+            const hasGroupParam = urlParams.has('group');
+            
+            if (hasGroupParam) {
+                tileView.classList.add('hidden'); 
+                explorerView.classList.remove('hidden'); 
+                loadAndParseCSV(CSV_FILE_PATH);
+            } else {
+                tileView.classList.remove('hidden'); 
+                explorerView.classList.add('hidden'); 
+                loadAndParseGroups(CSV_FILE_PATH);
+            }
+        }
+
+        window.onload = function() {
+            createNavbar(); 
+            
+            const menuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            if(menuButton) {
+                menuButton.addEventListener('click', () => {
+                    const isExpanded = menuButton.getAttribute('aria-expanded') === 'true' || false;
+                    menuButton.setAttribute('aria-expanded', !isExpanded);
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+
+            initializePage(); // Call the main initialization function
+        };
+
+    </script>
+</body>
+</html>

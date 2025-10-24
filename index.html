@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Impact Insights Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+    <style>
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f7fbf8; /* Light background */
+            scroll-behavior: smooth;
+        }
+
+        :root {
+            --primary-color: #68b97d; 
+            --accent-color: #f77894; 
+        }
+
+        .primary-bg { background-color: var(--primary-color); }
+        .primary-text { color: var(--primary-color); }
+        .accent-bg { background-color: var(--accent-color); }
+        .accent-text { color: var(--accent-color); }
+
+        /* Custom utility for link effects */
+        .card-link {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-link:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(104, 185, 125, 0.2);
+        }
+
+        /* Nav link custom style for consistency */
+        .nav-link { 
+            @apply text-gray-600 hover:primary-text border-b-2 border-transparent hover:border-current px-3 py-2 text-sm font-medium transition duration-150;
+        }
+        .nav-link.current {
+            @apply primary-text border-b-2 border-current;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <header class="bg-white shadow-md sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="index.html" class="flex items-center space-x-2">
+                    <i class="fa-solid fa-seedling primary-text text-2xl"></i>
+                    <span class="text-2xl font-extrabold text-gray-800">Eathical</span>
+                </a>
+
+                <nav id="desktop-nav" class="hidden sm:ml-6 sm:flex sm:space-x-4 items-center"></nav>
+
+                <button id="mobile-menu-button" class="sm:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:primary-text" aria-expanded="false">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="mobile-menu" class="hidden sm:hidden bg-white shadow-lg">
+            <div id="mobile-menu-links" class="pt-2 pb-3 space-y-1">
+                </div>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        <section class="primary-bg text-white py-16 sm:py-24 shadow-xl relative overflow-hidden">
+            
+            <div class="absolute inset-0 opacity-15 pointer-events-none">
+                <i class="fa-solid fa-apple-whole text-white absolute top-10 left-[10%] sm:left-1/4 text-5xl transform -rotate-12 opacity-80"></i>
+                <i class="fa-solid fa-carrot text-white absolute bottom-10 right-[10%] sm:right-1/4 text-5xl transform rotate-12 opacity-80"></i>
+                <i class="fa-solid fa-wheat-awn text-white absolute top-1/2 left-0 text-3xl transform -translate-y-1/2 opacity-50"></i>
+                <i class="fa-solid fa-egg text-white absolute bottom-5 left-1/2 text-3xl transform -translate-x-1/2 opacity-60"></i>
+                
+                <i class="fa-solid fa-leaf text-white absolute top-[20%] right-[5%] text-4xl opacity-50 transform rotate-45"></i>
+                <i class="fa-solid fa-leaf text-white absolute bottom-[25%] left-[5%] text-5xl opacity-40 transform -rotate-20"></i>
+                <i class="fa-solid fa-sun text-yellow-300 absolute top-[5%] left-[5%] text-3xl opacity-70"></i>
+            </div>
+
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+                <h1 class="text-4xl sm:text-6xl font-extrabold mb-4 leading-tight">
+                    Analyze the True Impact of Your Food
+                </h1>
+                <p class="text-xl sm:text-2xl font-light mb-8 opacity-90 max-w-3xl mx-auto">
+                    A platform for exploring nutritional content, environmental footprints and optimized dietary choices.
+                </p>
+                <a href="#dashboards" class="accent-bg hover:bg-[#c96078] text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:scale-105 inline-flex items-center space-x-2">
+                    <span>Explore Our Dashboards</span>
+                    <i class="fa-solid fa-arrow-down ml-2"></i>
+                </a>
+            </div>
+        </section>
+
+        <section id="video-showcase" class="py-8 sm:py-12 bg-white border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="text-3xl font-extrabold text-gray-800 mb-4">
+                    Why Use Eathical?
+                </h2>
+                <p class="text-lg text-gray-600 mb-8 max-w-3xl mx-auto">
+                    Watch our short video to learn how Eathical supports better nutrition and sustainability decisions.
+                </p>
+                
+                <div class="max-w-3xl mx-auto shadow-xl rounded-lg overflow-hidden">
+                    <video controls class="w-full h-auto" poster="https://placehold.co/800x450/68b97d/ffffff?text=Why+Use+Our+Platform?">
+                        <source src="./Video.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+                </div>
+        </section>
+        <section id="dashboards" class="pt-8 pb-16 sm:pt-12 sm:pb-24">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-3xl font-extrabold text-gray-800 text-center mb-4">
+                    Your Tools for Smart Food Decisions
+                </h2>
+                <p class="text-lg text-gray-600 text-center mb-12 max-w-3xl mx-auto">
+                    Dive deep into the data with our interactive tools.
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:mx-auto lg:max-w-6xl">
+
+                    
+                    <a href="food_explorer_dashboard.html" class="card-link block bg-white rounded-xl p-6 shadow-lg border-t-4 border-[#68b97d]">
+                        <div class="text-3xl primary-text mb-4">
+                            <i class="fa-solid fa-table"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">Data Explorer</h3>
+                        <p class="text-gray-600 text-sm">
+                            Filter, search and view the nutritional and environmental data for every food item in the dataset.
+                        </p>
+                        <span class="mt-4 inline-block primary-text font-medium text-sm">Launch &rarr;</span>
+                    </a>
+
+                    <a href="comparison_dashboard_final_v3Clean.html" class="card-link block bg-white rounded-xl p-6 shadow-lg border-t-4 border-[#f77894]">
+                        <div class="text-3xl accent-text mb-4">
+                            <i class="fa-solid fa-chart-bar"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">Comparison</h3>
+                        <p class="text-gray-600 text-sm">
+                            Directly compare two food items across key metrics like CO2, calories, and protein for informed choices.
+                        </p>
+                        <span class="mt-4 inline-block accent-text font-medium text-sm">Start &rarr;</span>
+                    </a>
+
+                    
+                    <a href="substitution_dashboard.html" class="card-link block bg-white rounded-xl p-6 shadow-lg border-t-4 border-[#5d5dff]">
+                        <div class="text-3xl text-[#5d5dff] mb-4">
+                            <i class="fa-solid fa-exchange-alt"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">Substitutes</h3>
+                        <p class="text-gray-600 text-sm">
+                            Find substitutes for foods to get options with the same nutritional value.
+                        </p>
+                        <span class="mt-4 inline-block text-[#5d5dff] font-medium text-sm">Find &rarr;</span>
+                    </a>
+
+                    <a href="quiz.html" class="card-link block bg-white rounded-xl p-6 shadow-lg border-t-4 border-yellow-500">
+                        <div class="text-3xl text-yellow-500 mb-4">
+                            <i class="fa-solid fa-clipboard-question"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">Quiz</h3>
+                        <p class="text-gray-600 text-sm">
+                            Test your knowledge of food nutrition and environmental impact.
+                        </p>
+                        <span class="mt-4 inline-block text-yellow-500 font-medium text-sm">Take Quiz &rarr;</span>
+                    </a>
+                    <!-- Semantic Filter -->
+<a href="semantic_filter.html" class="card-link block bg-white rounded-xl p-6 shadow-lg border-t-4 border-emerald-500">
+  <div class="text-3xl text-emerald-600 mb-4">
+    <i class="fa-solid fa-filter"></i>
+  </div>
+  <h3 class="text-xl font-bold text-gray-900 mb-2">Filter</h3>
+  <p class="text-gray-600 text-sm">
+    Filter foods by their environmental impact, macros, minerals & vitamins.
+  </p>
+  <span class="mt-4 inline-block text-emerald-600 font-medium text-sm">Open &rarr;</span>
+</a>
+
+<!-- About Us -->
+<a href="about_us.html" class="card-link block bg-white rounded-xl p-6 shadow-lg border-t-4 border-gray-400">
+  <div class="text-3xl text-gray-600 mb-4">
+    <i class="fa-solid fa-circle-info"></i>
+  </div>
+  <h3 class="text-xl font-bold text-gray-900 mb-2">About Us</h3>
+  <p class="text-gray-600 text-sm">
+    Learn about us, our data sources and our mission for sustainable nutrition.
+  </p>
+  <span class="mt-4 inline-block text-gray-600 font-medium text-sm">Read more &rarr;</span>
+</a>
+
+                </div>
+            </div>
+        </section>
+    </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white py-8 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <p class="text-sm">
+        © <span id="year"></span> Eathical — Food Impact Insights
+      </p>
+    </div>
+  </footer>
+  
+
+    <script>
+        // Function to dynamically create the consistent navbar
+        function createNavbar() {
+const navLinks = [
+  { name: 'Home',            href: 'index.html',                          icon: 'fa-house' },
+  { name: 'Food Matrix',     href: 'food_explorer_dashboard.html',        icon: 'fa-table' },
+  { name: 'Food Comparison', href: 'comparison_dashboard_final_v3Clean.html', icon: 'fa-chart-bar' },
+  { name: 'NutriSubstitutes',href: 'substitution_dashboard.html',         icon: 'fa-exchange-alt' },
+  { name: 'Quiz',            href: 'quiz.html',                           icon: 'fa-clipboard-question' },
+  { name: 'Range Filter',    href: 'semantic_filter.html',                 icon: 'fa-filter' },
+  { name: 'About Us',        href: 'about_us.html',                        icon: 'fa-circle-info' }
+];
+
+
+  // separate NEVO links for dropdown
+  const nevoLinks = [
+    { name: 'Dutch Food Composition Database', href: 'https://www.rivm.nl/en/dutch-food-composition-database' },
+    { name: 'Life Cycle Analysis database', href: 'https://www.rivm.nl/en/food-and-nutrition/sustainable-food/environmental-impact-of-food-products' }
+  ];
+
+  const path = window.location.pathname;
+  const desktopNav = document.getElementById('desktop-nav');
+  const mobileNav  = document.getElementById('mobile-menu-links');
+  if (!desktopNav || !mobileNav) return;
+
+  desktopNav.innerHTML = '';
+  mobileNav.innerHTML  = '';
+
+  // build normal links
+  navLinks.forEach(link => {
+    const isCurrent = path.endsWith('/' + link.href) || path.endsWith(link.href) ||
+      (link.name === 'Home' && (path.endsWith('index.html') || path === '/' || path === ''));
+
+    const linkClass = isCurrent
+      ? 'primary-text border-b-2 border-current px-3 py-2 text-sm font-medium transition duration-150'
+      : 'text-gray-600 hover:primary-text border-b-2 border-transparent hover:border-current px-3 py-2 text-sm font-medium transition duration-150';
+
+    const mobileClass = isCurrent
+      ? 'block primary-text bg-gray-50 px-3 py-2 rounded-md text-base font-medium'
+      : 'block text-gray-700 hover:primary-text hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium';
+
+    desktopNav.innerHTML += `
+      <a href="${link.href}" class="${linkClass}">
+        <i class="fa-solid ${link.icon} mr-1"></i>${link.name}
+      </a>`;
+
+    mobileNav.innerHTML += `
+      <a href="${link.href}" class="${mobileClass}">
+        <i class="fa-solid ${link.icon} mr-2"></i>${link.name}
+      </a>`;
+  });
+
+  // add NEVO dropdown (desktop)
+  const nevoDropdown = document.createElement('div');
+  nevoDropdown.className = "relative group";
+  nevoDropdown.innerHTML = `
+    <button class="text-gray-600 hover:primary-text border-b-2 border-transparent hover:border-current px-3 py-2 text-sm font-medium transition duration-150 flex items-center">
+      <i class="fa-solid fa-arrow-up-right-from-square mr-1"></i> Visit RIVM
+      <i class="fa-solid fa-caret-down ml-1"></i>
+    </button>
+    <div class="absolute hidden group-hover:block hover:block bg-white shadow-md rounded-md top-full left-0 z-20">
+
+      ${nevoLinks.map(l => `
+        <a href="${l.href}" target="_blank" rel="noopener noreferrer"
+           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 whitespace-nowrap">
+          ${l.name}
+        </a>`).join('')}
+    </div>
+  `;
+  desktopNav.appendChild(nevoDropdown);
+
+  // add NEVO section (mobile)
+  const mobileNEVO = `
+    <div class="mt-2 border-t border-gray-200">
+      <span class="block px-3 py-2 text-gray-500 text-xs font-semibold">Visit NEVO</span>
+      ${nevoLinks.map(l => `
+        <a href="${l.href}" target="_blank" rel="noopener noreferrer"
+           class="block text-gray-700 hover:primary-text hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium">
+          ${l.name}
+        </a>`).join('')}
+    </div>
+  `;
+  mobileNav.innerHTML += mobileNEVO;
+}
+
+        // JavaScript for mobile menu toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const menu = document.getElementById('mobile-menu');
+            const isExpanded = this.getAttribute('aria-expanded') === 'true' || false;
+            this.setAttribute('aria-expanded', !isExpanded);
+            menu.classList.toggle('hidden');
+        });
+
+        // Initialize the navbar on load
+        window.onload = function() {
+            createNavbar();
+        };
+    </script>
+</body>
+</html>

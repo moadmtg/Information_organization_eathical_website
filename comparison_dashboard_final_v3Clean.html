@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nutritional Impact: Fun Comparison Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script> <!--Chart making library-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script> <!--Styling -->
+    <!-- It’s used both to populate the dropdowns with food items
+     and to react when the user changes a selection to then updates the chart.-->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <!-- These 2 plugins with css so we make dropdowns searchable and styled -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!--Importing Google fonts 'Inter'-->
+        <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#34D399", 
+                        "background-light": "#EDF5EC",
+                        "background-dark": "#1F2937",
+                        "card-light": "#FFFFFF",
+                        "card-dark": "#374151",
+                        "text-light": "#111827",
+                        "text-dark": "#F9FAFB",
+                        "text-secondary-light": "#6B7280",
+                        "text-secondary-dark": "#9CA3AF"
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #EDF5EC; }
+
+        /* Colors for the different foods and the other aspects of the website (to not have to repeat the code) */
+        :root {
+            --primary-color: #68b97d; 
+            --accent-color: #f77894; 
+            --secondary-color: #5d5dff; 
+            --chart-color-1: rgba(104, 185, 125, 0.6); 
+            --chart-color-2: rgba(93, 93, 255, 0.6); 
+        }
+
+        .primary-bg { background-color: var(--primary-color); }
+        .primary-text { color: var(--primary-color); }
+        .accent-text { color: var(--accent-color); }
+        /* Zorg dat nested spans de label-size erven */
+.column-group label span { font-size: inherit; }
+
+        .nav-link { 
+            @apply text-gray-600 hover:primary-text border-b-2 border-transparent hover:border-current px-3 py-2 text-sm font-medium transition duration-150;
+        }
+        .nav-link.current {
+            @apply primary-text border-b-2 border-current;
+        }
+
+        /* --- For the Column Selection --- */
+        #columnSelectionPanel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 320px;
+            height: 100vh;
+            background-color: white;
+            box-shadow: -4px 0 10px rgba(0, 0, 0, 0.1);
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 50;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        #columnSelectionPanel.open {
+            transform: translateX(0);
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .panel-header button {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #333;
+        }
+
+ /* Headers like Food Explorer: small, bold, uppercase, green */
+.column-group h4 {
+  font-size: 0.75rem;      /* text-xs */
+  font-weight: 800;        /* font-extrabold */
+  text-transform: uppercase;
+  letter-spacing: .02em;   /* tracking-wide-ish */
+  color: var(--primary-color);
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e5e7eb; /* gray-200 */
+}
+
+/* Items: smaller + bold */
+.column-group label {
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;   /* text-sm */
+  font-weight: 600;      /* font-semibold */
+  color: #111827;        /* gray-900 */
+  margin-bottom: 0.25rem;
+  cursor: pointer;
+}
+
+/* Unit + arrow next to label */
+.column-group label .unit {
+  font-size: 0.75rem;    /* text-xs */
+  font-weight: 500;      /* font-medium */
+  color: #111827;        /* black */
+}
+
+        
+        .column-group label:hover {
+            background-color: #f7fbf8;
+        }
+
+        .column-group input[type="checkbox"] {
+            margin-right: 8px;
+            accent-color: var(--primary-color);
+        }
+
+        .select2-container--default .select2-selection--single {
+            border-color: #d1d5db; 
+            border-radius: 0.375rem; 
+            height: 38px; 
+            padding-top: 5px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #1f2937; 
+            padding-left: 0.75rem; 
+        }
+        .select2-container .select2-selection--single .select2-selection__arrow {
+            height: 36px;
+        }
+        .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+            background-color: var(--primary-color);
+        }
+        .select2-dropdown {
+            border-color: #d1d5db;
+            border-radius: 0.375rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+
+  
+  .input-circle {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #D1D5DB; /* gray-300 */
+    border-radius: 9999px;
+    display: inline-grid;
+    place-content: center;
+    margin-right: 0.75rem; /* mr-3 */
+    cursor: pointer;
+    transition: all .15s ease;
+    background: white;
+  }
+  .input-circle:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52,211,153,.35); /* ring-primary-ish */
+    border-color: #34D399; /* primary */
+  }
+  .input-circle:checked {
+    border-color: #34D399;
+    background: #34D399;
+  }
+  .input-circle:checked::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: white;
+  }
+
+  /* sidebar typography/layout parity */
+  .sidebar-body { padding: 1.5rem; }                 /* p-6 */
+  .sidebar-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; padding-bottom:.75rem; border-bottom:1px solid #E5E7EB; }
+  .sidebar-title { font-size:1.25rem; font-weight:700; color:#111827; } /* text-xl font-bold text-gray-900 */
+  .sidebar-hint  { font-size:.875rem; color:#6B7280; margin-bottom:1rem; } /* text-sm text-gray-500 */
+</style>
+
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <header class="bg-white shadow-md sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="index.html" class="flex items-center space-x-2">
+                    <i class="fa-solid fa-seedling primary-text text-2xl"></i>
+                    <span class="text-2xl font-extrabold text-gray-800">Eathical</span>
+                </a>
+
+                <nav id="desktop-nav" class="hidden sm:ml-6 sm:flex sm:space-x-4 items-center"></nav>
+
+                <button id="mobile-menu-button" class="sm:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:primary-text" aria-expanded="false">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="mobile-menu" class="hidden sm:hidden bg-white shadow-lg">
+            <div id="mobile-menu-links" class="pt-2 pb-3 space-y-1">
+                </div>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto p-4 md:p-8">
+        <h1 class="text-3xl font-extrabold text-gray-800 mb-2 accent-text">
+            Food Comparison <i class="fas fa-balance-scale-left"></i>
+        </h1>
+        <p class="text-gray-600 mb-8">
+            Compare two different food items per 100 grams across key nutritional and environmental metrics using a Radar Chart.
+        </p>
+        
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl font-bold mb-4 primary-text border-b pb-2">Select Foods to Compare</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div>
+                    <label for="food1-select" class="block text-sm font-medium text-gray-700 mb-1">Food Item 1 (Green)</label>
+                    <select id="food1-select" class="mt-1 w-full" onchange="renderComparison()">
+                        </select>
+                </div>
+                
+                <div>
+                    <label for="food2-select" class="block text-sm font-medium text-gray-700 mb-1">Food Item 2 (Violet)</label>
+                    <select id="food2-select" class="mt-1 w-full" onchange="renderComparison()">
+                        </select>
+                </div>
+            </div>
+
+<button id="openColumnSelectionBtn"
+        onclick="toggleColumnSelectionPanel(true)"
+        class="primary-bg text-white font-semibold py-2 px-4 rounded-md hover:opacity-90 transition duration-150 mb-6 flex items-center shadow-md">
+  <i class="fa-solid fa-table-list mr-2"></i> Select Columns
+</button>
+
+
+            <div class="flex flex-col items-center">
+                <div id="legend-container" class="flex justify-center space-x-8 text-lg font-semibold mb-6">
+                    </div>
+                <div class="relative w-full max-w-xl aspect-square">
+                    <canvas id="radarChart"></canvas>
+                </div>
+                <div id="detail-container" class="mt-8 w-full">
+                    </div>
+            </div>
+        </div>
+    </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white py-8 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <p class="text-sm">
+        © <span id="year"></span> Eathical — Food Impact Insights
+      </p>
+    </div>
+  </footer>
+  
+<!-- Drawer Sidebar (keeps original ID so existing JS won't crash) -->
+<div id="columnSelectionPanel" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform translate-x-full overflow-y-auto pt-16 rounded-none">
+
+<div class="sidebar-body">
+  <div class="sidebar-head">
+    <h3 class="sidebar-title">Configure Metrics</h3>
+    <button id="closePanelBtn" onclick="toggleColumnSelectionPanel(false)" class="text-gray-500 hover:text-gray-700" aria-label="Close">
+      <i class="fa-solid fa-times text-2xl"></i>
+    </button>
+  </div>
+
+  <p class="sidebar-hint">
+    Select the metrics you want to include in the Radar Chart comparison. At least 3 are required.
+  </p>
+
+
+    <!-- Metric checkboxes -->
+    <div id="metric-checkboxes" class="space-y-4">
+      <p class="text-center text-gray-400 mt-10">Loading metrics...</p>
+    </div>
+
+    <!-- Apply button -->
+    <div class="mt-6 pt-4 border-t border-gray-200">
+      <button id="apply-metrics-btn" onclick="applyMetricSelection()"
+        class="w-full primary-bg text-white font-semibold py-2 rounded-md hover:opacity-90 transition duration-150">
+        Apply Selection & Update Chart
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<div id="sidebar-overlay"
+     class="hidden fixed inset-0 bg-black/50 z-40"
+     onclick="toggleColumnSelectionPanel(false)"></div>
+
+    <script>
+        
+        const CSV_FILE_PATH = 'DataClean.csv';
+        let parsedData = [];
+        let globalMinMaxCache = {};
+        
+        // ALL available metrics with their labels, units, and goal direction
+        const ALL_METRICS = {
+            'Global warming kg CO2': { label: 'CO2 Impact', unit: 'kg CO2', direction: 'low', group: 'ENVIRONMENTAL IMPACT' },
+            'Acidification kg SO2': { label: 'Acidification', unit: 'kg SO2', direction: 'low', group: 'ENVIRONMENTAL IMPACT' },
+            'Freshwater eutrophication kg P': { label: 'Freshwater Eutrophication', unit: 'kg P', direction: 'low', group: 'ENVIRONMENTAL IMPACT' },
+            'Land use m2a crop': { label: 'Land Use', unit: 'm²a', direction: 'low', group: 'ENVIRONMENTAL IMPACT' },
+            'Marine eutrophication kg N': { label: 'Marine Eutrophication', unit: 'kg N', direction: 'low', group: 'ENVIRONMENTAL IMPACT' },
+            'Water consumption m3': { label: 'Water Use', unit: 'm³', direction: 'low', group: 'ENVIRONMENTAL IMPACT' },
+            
+            'Energy (kcal)': { label: 'Energy (kcal)', unit: 'kcal', direction: 'high', group: 'MACRO NUTRIENTS' },
+            'Energy (kJ)': { label: 'Energy (kJ)', unit: 'kJ', direction: 'high', group: 'MACRO NUTRIENTS' },
+            'Protein (g)': { label: 'Protein', unit: 'g', direction: 'high', group: 'MACRO NUTRIENTS' },
+            'Fiber (g)': { label: 'Fiber', unit: 'g', direction: 'high', group: 'MACRO NUTRIENTS' },
+            'Fat (g)': { label: 'Fat', unit: 'g', direction: 'low', group: 'MACRO NUTRIENTS' },
+            'Total Fat (g)': { label: 'Total Fat', unit: 'g', direction: 'low', group: 'MACRO NUTRIENTS' },
+            'Sugars (g)': { label: 'Sugars', unit: 'g', direction: 'low', group: 'MACRO NUTRIENTS' },
+            'Carbohydrates (g)': { label: 'Carbohydrates', unit: 'g', direction: 'low', group: 'MACRO NUTRIENTS' },
+            'Fatty acids (g)': { label: 'Saturated Fats', unit: 'g', direction: 'low', group: 'MACRO NUTRIENTS' },
+
+            'Calcium (mg)': { label: 'Calcium', unit: 'mg', direction: 'high', group: 'MINERALS & SALTS' },
+            'Iron (mg)': { label: 'Iron', unit: 'mg', direction: 'high', group: 'MINERALS & SALTS' },
+            'Sodium (mg)': { label: 'Sodium', unit: 'mg', direction: 'low', group: 'MINERALS & SALTS' },
+            'Potassium (mg)': { label: 'Potassium', unit: 'mg', direction: 'high', group: 'MINERALS & SALTS' },
+            'Phosphorus (mg)': { label: 'Phosphorus', unit: 'mg', direction: 'high', group: 'MINERALS & SALTS' },
+            'Magnesium (mg)': { label: 'Magnesium', unit: 'mg', direction: 'high', group: 'MINERALS & SALTS' },
+            'Zinc(mg)': { label: 'Zinc', unit: 'mg', direction: 'high', group: 'MINERALS & SALTS' },
+            'Selenium (µg)': { label: 'Selenium', unit: 'µg', direction: 'high', group: 'MINERALS & SALTS' },
+            'Copper (mg)': { label: 'Copper', unit: 'mg', direction: 'high', group: 'MINERALS & SALTS' },
+            'Iodine (µg)': { label: 'Iodine', unit: 'µg', direction: 'high', group: 'MINERALS & SALTS' },
+            'Chloride (mg)': { label: 'Chloride', unit: 'mg', direction: 'high', group: 'MINERALS & SALTS' },
+            
+            'Vitamin C (mg)': { label: 'Vitamin C', unit: 'mg', direction: 'high', group: 'VITAMINS' },
+            'Vitamin D (µg)': { label: 'Vitamin D', unit: 'µg', direction: 'high', group: 'VITAMINS' },
+            'Vitamin E (mg)': { label: 'Vitamin E', unit: 'mg', direction: 'high', group: 'VITAMINS' },
+            'Vitamin K (µg)': { label: 'Vitamin K', unit: 'µg', direction: 'high', group: 'VITAMINS' },
+            'Vitamin B1 (mg)': { label: 'Vitamin B1', unit: 'mg', direction: 'high', group: 'VITAMINS' },
+            'Vitamin B2 (mg)': { label: 'Vitamin B2', unit: 'mg', direction: 'high', group: 'VITAMINS' },
+            'Vitamin B6 (mg)': { label: 'Vitamin B6', unit: 'mg', direction: 'high', group: 'VITAMINS' },
+            'Vitamin B12 (µg)': { label: 'Vitamin B12', unit: 'µg', direction: 'high', group: 'VITAMINS' },
+            'Vitamin B3 (mg)': { label: 'Vitamin B3', unit: 'mg', direction: 'high', group: 'VITAMINS' },
+        };
+         // the metrics the user sees at first  (they can change this)
+        let CURRENT_METRICS = {
+            'Global warming kg CO2': ALL_METRICS['Global warming kg CO2'],
+            'Water consumption m3': ALL_METRICS['Water consumption m3'],
+            'Energy (kcal)': ALL_METRICS['Energy (kcal)'],
+            'Protein (g)': ALL_METRICS['Protein (g)'],
+            'Sugars (g)': ALL_METRICS['Sugars (g)'],
+            'Fiber (g)': ALL_METRICS['Fiber (g)'],
+            'Sodium (mg)': ALL_METRICS['Sodium (mg)'],
+        };
+        
+        //  Utility Functions 
+        // Toggle the column selection panel open or closed on the right side of the screen
+function toggleColumnSelectionPanel(open) {
+  const panel   = document.getElementById('columnSelectionPanel');
+  const overlay = document.getElementById('sidebar-overlay');
+  if (!panel || !overlay) return;
+
+  if (open) {
+    panel.classList.add('open');
+    overlay.classList.remove('hidden');   // show overlay
+    document.body.classList.add('overflow-hidden');
+  } else {
+    panel.classList.remove('open');
+    overlay.classList.add('hidden');      // hide overlay
+    document.body.classList.remove('overflow-hidden');
+  }
+}
+
+        // Builds the checkbox for all metrics, grouped into categories, and shows which are selected
+        function renderMetricCheckboxes() {
+            const container = document.getElementById('metric-checkboxes');
+            if (!container) return;
+
+            const groupedMetrics = {};
+            Object.entries(ALL_METRICS).forEach(([key, props]) => {
+                const groupName = props.group || 'OTHER';
+                if (!groupedMetrics[groupName]) {
+                    groupedMetrics[groupName] = [];
+                }
+                groupedMetrics[groupName].push({ key, ...props });
+            });
+
+            let html = '';
+            for (const [groupName, metrics] of Object.entries(groupedMetrics)) {
+                html += `
+                    <div class="column-group">
+                        <h4>${groupName}</h4>
+                `;
+                metrics.forEach(metric => {
+                    const isChecked = CURRENT_METRICS.hasOwnProperty(metric.key);
+                    const directionText = metric.direction === 'high' ? '↑' : '↓';
+                    const titleText = `${metric.label}: ${metric.direction} value is better`;
+                    html += `
+            <label title="${titleText}" class="flex items-center text-sm font-semibold text-gray-900">
+                <input type="checkbox"
+                data-metric-key="${metric.key}"
+                ${isChecked ? 'checked' : ''}
+                onchange="handleMetricChange()"
+                class="h-4 w-4 text-primary rounded-full border-gray-300 focus:ring-primary">
+                <span class="ml-3">
+                ${metric.label}
+                <span class="unit ml-1 text-xs font-medium text-black">(${metric.unit}) ${directionText}</span>
+                </span>
+            </label>
+            `;
+
+                });
+                html += `</div>`;
+            }
+            container.innerHTML = html;
+        }
+        // Collects all checked metrics, verifies at least 3 are chosen and then changes the chart
+        function applyMetricSelection() {
+            const checkboxes = document.querySelectorAll('#metric-checkboxes input[type="checkbox"]');
+            const newMetrics = {};
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    const key = checkbox.dataset.metricKey;
+                    newMetrics[key] = ALL_METRICS[key];
+                }
+            });
+
+            const newMetricCount = Object.keys(newMetrics).length;
+            if (newMetricCount < 3) {
+                alert(`Please select at least 3 metrics to display on the chart. You currently have ${newMetricCount} selected.`);
+                return;
+            }
+
+            CURRENT_METRICS = newMetrics;
+            toggleColumnSelectionPanel(false); 
+            renderComparison(); // Re-render with the new metrics
+        }
+        // Keeps track of how many metrics are checked and enables or disables the apply button
+        function handleMetricChange() {
+            const checkboxes = document.querySelectorAll('#metric-checkboxes input[type="checkbox"]');
+            const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+            const applyButton = document.querySelector('#columnSelectionPanel button[onclick="applyMetricSelection()"]');
+            
+            if (checkedCount < 3) {
+                applyButton.disabled = true;
+                applyButton.classList.add('opacity-50', 'cursor-not-allowed');
+                applyButton.textContent = `Select at least ${3 - checkedCount} more metric(s)`;
+            } else {
+                applyButton.disabled = false;
+                applyButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                applyButton.textContent = 'Apply Selection & Update Chart';
+            }
+        }
+
+        function createNavbar() {
+const navLinks = [
+  { name: 'Home',            href: 'index.html',                          icon: 'fa-house' },
+  { name: 'Food Matrix',     href: 'food_explorer_dashboard.html',        icon: 'fa-table' },
+  { name: 'Food Comparison', href: 'comparison_dashboard_final_v3Clean.html', icon: 'fa-chart-bar' },
+  { name: 'NutriSubstitutes',href: 'substitution_dashboard.html',         icon: 'fa-exchange-alt' },
+  { name: 'Quiz',            href: 'quiz.html',                           icon: 'fa-clipboard-question' },
+  { name: 'Range Filter',    href: 'semantic_filter.html',                 icon: 'fa-filter' },
+  { name: 'About Us',        href: 'about_us.html',                        icon: 'fa-circle-info' }
+];
+
+
+  // separate NEVO links for dropdown
+  const nevoLinks = [
+    { name: 'Dutch Food Composition Database', href: 'https://www.rivm.nl/en/dutch-food-composition-database' },
+    { name: 'Life Cycle Analysis database', href: 'https://www.rivm.nl/en/food-and-nutrition/sustainable-food/environmental-impact-of-food-products' }
+  ];
+
+  const path = window.location.pathname;
+  const desktopNav = document.getElementById('desktop-nav');
+  const mobileNav  = document.getElementById('mobile-menu-links');
+  if (!desktopNav || !mobileNav) return;
+
+  desktopNav.innerHTML = '';
+  mobileNav.innerHTML  = '';
+
+  // build normal links
+  navLinks.forEach(link => {
+    const isCurrent = path.endsWith('/' + link.href) || path.endsWith(link.href) ||
+      (link.name === 'Home' && (path.endsWith('index.html') || path === '/' || path === ''));
+
+    const linkClass = isCurrent
+      ? 'primary-text border-b-2 border-current px-3 py-2 text-sm font-medium transition duration-150'
+      : 'text-gray-600 hover:primary-text border-b-2 border-transparent hover:border-current px-3 py-2 text-sm font-medium transition duration-150';
+
+    const mobileClass = isCurrent
+      ? 'block primary-text bg-gray-50 px-3 py-2 rounded-md text-base font-medium'
+      : 'block text-gray-700 hover:primary-text hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium';
+
+    desktopNav.innerHTML += `
+      <a href="${link.href}" class="${linkClass}">
+        <i class="fa-solid ${link.icon} mr-1"></i>${link.name}
+      </a>`;
+
+    mobileNav.innerHTML += `
+      <a href="${link.href}" class="${mobileClass}">
+        <i class="fa-solid ${link.icon} mr-2"></i>${link.name}
+      </a>`;
+  });
+
+  // add NEVO dropdown (desktop)
+  const nevoDropdown = document.createElement('div');
+  nevoDropdown.className = "relative group";
+  nevoDropdown.innerHTML = `
+    <button class="text-gray-600 hover:primary-text border-b-2 border-transparent hover:border-current px-3 py-2 text-sm font-medium transition duration-150 flex items-center">
+      <i class="fa-solid fa-arrow-up-right-from-square mr-1"></i> Visit RIVM
+      <i class="fa-solid fa-caret-down ml-1"></i>
+    </button>
+    <div class="absolute hidden group-hover:block hover:block bg-white shadow-md rounded-md top-full left-0 z-20">
+
+      ${nevoLinks.map(l => `
+        <a href="${l.href}" target="_blank" rel="noopener noreferrer"
+           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 whitespace-nowrap">
+          ${l.name}
+        </a>`).join('')}
+    </div>
+  `;
+  desktopNav.appendChild(nevoDropdown);
+
+  // add NEVO section (mobile)
+  const mobileNEVO = `
+    <div class="mt-2 border-t border-gray-200">
+      <span class="block px-3 py-2 text-gray-500 text-xs font-semibold">Visit NEVO</span>
+      ${nevoLinks.map(l => `
+        <a href="${l.href}" target="_blank" rel="noopener noreferrer"
+           class="block text-gray-700 hover:primary-text hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium">
+          ${l.name}
+        </a>`).join('')}
+    </div>
+  `;
+  mobileNav.innerHTML += mobileNEVO;
+}
+
+        // JavaScript for mobile menu toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const menu = document.getElementById('mobile-menu');
+            const isExpanded = this.getAttribute('aria-expanded') === 'true' || false;
+            this.setAttribute('aria-expanded', !isExpanded);
+            menu.classList.toggle('hidden');
+        });
+
+        // Initialize the navbar on load
+        window.onload = function() {
+            createNavbar();
+        };
+
+        // Goes through the dataset to calculate min/max values for each metric
+        function calculateGlobalMinMax() {
+            const metricKeys = Object.keys(ALL_METRICS);
+            globalMinMaxCache = {};
+
+            metricKeys.forEach(key => {
+                const metricValues = parsedData.map(item => item[key]).filter(v => typeof v === 'number' && v !== null);
+                if (metricValues.length > 0) {
+                    globalMinMaxCache[key] = {
+                        min: Math.min(...metricValues),
+                        max: Math.max(...metricValues)
+                    };
+                }
+            });
+        }
+
+        // CSV Parsing by dealing with comma decimals and semicolon delimiters
+        async function loadAndParseCSV(filePath) {
+            try {
+                const response = await fetch(filePath);
+                const text = await response.text();
+                const rows = text.trim().split('\n');
+                const headers = rows[0].split(';').map(h => h.trim());
+
+                const foodNameHeader = headers.find(h => h.includes('Food name')) || 'Food name';
+                
+                const data = rows.slice(1).map(row => {
+                    const values = row.split(';');
+                    const item = {};
+                    
+                    headers.forEach((key, i) => {
+                        let value = values[i];
+
+                        if (value !== undefined && value !== null) {
+                            value = value.replace(/"/g, '').replace(/,/g, '.').trim();
+                            
+                            if (value.length > 0 && !isNaN(value)) {
+                                item[key] = parseFloat(value);
+                            } else {
+                                item[key] = value;
+                            }
+                        } else {
+                            item[key] = null;
+                        }
+                    });
+                    
+                    item['Food name'] = item[foodNameHeader];
+                    
+                    return item;
+                });
+                
+                parsedData = data.filter(item => 
+                    item['Food name']
+                );
+                
+                if (parsedData.length === 0) {
+                    throw new Error("Data loaded but resulted in 0 valid food items.");
+                }
+
+                calculateGlobalMinMax();
+
+                initializeFoodSelectors();
+                renderMetricCheckboxes();
+                handleMetricChange();
+                renderComparison();
+
+            } catch (error) {
+                console.error("Error loading or parsing CSV:", error);
+                document.getElementById('radarChart').parentElement.innerHTML = 
+                    '<p class="text-red-600 font-bold">Error: Could not load or parse food data. Details: ' + error.message + '</p>';
+            }
+        }
+        // Adds to both food dropdowns with sorted items from the dataset 
+        function initializeFoodSelectors() {
+            const $foodSelect1 = $('#food1-select');
+            const $foodSelect2 = $('#food2-select');
+            
+            const sortedData = [...parsedData].sort((a, b) => 
+                String(a['Food name']).localeCompare(String(b['Food name']))
+            );
+
+            const optionsHtml = sortedData.map(item => 
+                `<option value="${item['Food name']}">${item['Food name']}</option>`
+            ).join('');
+
+            $foodSelect1.html(optionsHtml);
+            $foodSelect2.html(optionsHtml);
+
+            // Set initial default selections by using jQuery
+            const default1 = sortedData.find(item => String(item['Food name']).toLowerCase().includes('cheese'))?.['Food name'] || sortedData[0]?.['Food name'] || '';
+            const default2 = sortedData.find(item => String(item['Food name']).toLowerCase().includes('lentils'))?.['Food name'] || sortedData[1]?.['Food name'] || '';
+
+            $foodSelect1.val(default1);
+            $foodSelect2.val(default2);
+            
+            $foodSelect1.select2({
+                placeholder: "Type or scroll to select Food 1...",
+                allowClear: false,
+            });
+            $foodSelect2.select2({
+                placeholder: "Type or scroll to select Food 2...",
+                allowClear: false,
+            });
+
+            // Re-render comparison 
+            $foodSelect1.on('select2:select', renderComparison);
+            $foodSelect2.on('select2:select', renderComparison);
+            $foodSelect1.on('select2:unselect', renderComparison);
+            $foodSelect2.on('select2:unselect', renderComparison);
+        }
+
+        // Main function to render the radar chart and comparison details for two selected foods
+        function getNormalizedValues(foodData) {
+            const metricKeys = Object.keys(CURRENT_METRICS);
+            const values = {};
+            const rawValues = {};
+
+            metricKeys.forEach(key => {
+                const item = foodData[0];
+                
+                if (!item || !globalMinMaxCache[key]) {
+                    values[key] = 0;
+                    rawValues[key] = 'N/A';
+                    return;
+                }
+
+                const rawValue = item[key];
+                rawValues[key] = rawValue;
+                
+                if (typeof rawValue === 'number' && rawValue !== null) {
+                    const min = globalMinMaxCache[key].min;
+                    const max = globalMinMaxCache[key].max;
+                    const range = max - min;
+                    const metric = CURRENT_METRICS[key];
+                    
+                    let normValue;
+                    if (range <= 0.0001) {
+                        normValue = 0.5;
+                    } else if (metric.direction === 'high') {
+                        normValue = (rawValue - min) / range;
+                    } else if (metric.direction === 'low') {
+                        normValue = (rawValue - min) / range;
+                    }
+                    // Clamp score between 0.05 and 1.0 so the chart area never collapses completely
+                    values[key] = Math.max(0.05, Math.min(1, normValue)); 
+                } else {
+                    values[key] = 0;
+                }
+            });
+
+            return { normalized: Object.values(values), raw: Object.values(rawValues) };
+        }
+
+        let radarChartInstance = null;
+        function renderComparison() {
+            if (parsedData.length === 0 || Object.keys(globalMinMaxCache).length === 0) return; 
+
+            // Get selected values using jQuery's val(). It works with Select2
+            const foodName1 = $('#food1-select').val();
+            const foodName2 = $('#food2-select').val();
+            
+            const food1Data = parsedData.filter(item => item['Food name'] === foodName1);
+            const food2Data = parsedData.filter(item => item['Food name'] === foodName2);
+
+            const metricKeys = Object.keys(CURRENT_METRICS);
+
+            if (metricKeys.length < 3) {
+                 document.getElementById('radarChart').parentElement.innerHTML = 
+                    '<p class="text-red-600 font-semibold text-center pt-8">Please select at least 3 metrics using the "Select/Configure Columns" button to display the Radar Chart.</p>';
+                document.getElementById('detail-container').innerHTML = '';
+                document.getElementById('legend-container').innerHTML = '';
+                if (radarChartInstance) {
+                    radarChartInstance.destroy();
+                    radarChartInstance = null;
+                }
+                return;
+            }
+
+            if (!foodName1 || !foodName2 || !food1Data.length || !food2Data.length) {
+                document.getElementById('radarChart').parentElement.innerHTML = '<p class="text-red-600 font-semibold text-center pt-8">Please select two valid food items for comparison from the dropdowns above.</p>';
+                document.getElementById('detail-container').innerHTML = '';
+                document.getElementById('legend-container').innerHTML = '';
+                if (radarChartInstance) {
+                    radarChartInstance.destroy();
+                    radarChartInstance = null;
+                }
+                return;
+            }
+
+            const { normalized: scores1, raw: raw1 } = getNormalizedValues(food1Data);
+            const { normalized: scores2, raw: raw2 } = getNormalizedValues(food2Data);
+            
+            const metricLabels = Object.values(CURRENT_METRICS).map(m => m.label);
+            const metricUnits = Object.values(CURRENT_METRICS).map(m => m.unit);
+
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            if (radarChartInstance) {
+                radarChartInstance.destroy();
+            }
+
+            const COLOR_1 = 'rgba(104, 185, 125, 1)'; 
+            const COLOR_1_ALPHA = 'rgba(104, 185, 125, 0.5)';
+            const COLOR_2 = 'rgba(93, 93, 255, 1)'; 
+            const COLOR_2_ALPHA = 'rgba(93, 93, 255, 0.5)';
+            // building and styling the chart is done here, 
+            // with the usage of a spiderweb 
+
+            radarChartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: metricLabels,
+                    datasets: [
+                        {
+                            label: foodName1,
+                            data: scores1,
+                            backgroundColor: COLOR_1_ALPHA,
+                            borderColor: COLOR_1,
+                            pointBackgroundColor: COLOR_1,
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: COLOR_1,
+                            borderWidth: 3,
+                            fill: true,
+                        },
+                        {
+                            label: foodName2,
+                            data: scores2,
+                            backgroundColor: COLOR_2_ALPHA,
+                            borderColor: COLOR_2,
+                            pointBackgroundColor: COLOR_2,
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: COLOR_2,
+                            borderWidth: 3,
+                            fill: true,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 12 },
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const index = context.dataIndex;
+                                    const score = context.parsed.r.toFixed(2);
+                                    const rawValue = context.datasetIndex === 0 ? raw1[index] : raw2[index];
+                                    const unit = metricUnits[index];
+                                    const formattedRaw = typeof rawValue === 'number' ? rawValue.toFixed(2) : rawValue;
+                                    return `${label}: Score ${score} | Value: ${formattedRaw} ${unit}`;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: `Comparison of ${foodName1} vs ${foodName2}`, /* UPDATED TEXT */
+                            font: { size: 16, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(0, 0, 0, 0.2)', lineWidth: 1 },
+                            grid: { color: 'rgba(0, 0, 0, 0.2)', lineWidth: 1 },
+                            suggestedMin: 0,
+                            suggestedMax: 1,
+                            pointLabels: { 
+                                font: { size: 14, weight: 'bold' },
+                                color: '#333',
+                            },
+                            ticks: { 
+                                display: true,
+                                backdropColor: 'rgba(255, 255, 255, 0.8)',
+                                color: '#555',
+                                font: { size: 10 },
+                                stepSize: 0.25,
+                                callback: (value) => value.toFixed(1)
+                            }
+                        }
+                    }
+                }
+            });
+
+            renderLegend(foodName1, foodName2, COLOR_1, COLOR_2);
+            renderDetails(foodName1, foodName2, raw1, raw2, metricLabels, metricUnits, CURRENT_METRICS, globalMinMaxCache);
+        }
+        // Plots the legend below the chart showing which food corresponds to which color
+        function renderLegend(name1, name2, color1, color2) {
+            const legendHtml = `
+                <div class="flex items-center text-gray-800">
+                    <span class="w-4 h-4 rounded-full mr-2 shadow" style="background-color: ${color1}"></span>
+                    ${name1} (Green)
+                </div>
+                <div class="flex items-center text-gray-800">
+                    <span class="w-4 h-4 rounded-full mr-2 shadow" style="background-color: ${color2}"></span>
+                    ${name2} (Violet)
+                </div>
+            `;
+            document.getElementById('legend-container').innerHTML = legendHtml;
+        }
+        // Generates the raw data comparison table beneath the chart with minimum and maximum ranges and goals
+        function renderDetails(name1, name2, raw1, raw2, labels, units, currentMetrics, globalMinMax) {
+            let detailHtml = `
+                <h3 class="text-lg font-bold mb-4 primary-text">Raw Data Comparison Table</h3>
+                <p class="text-sm text-gray-500 mb-4 italic">The radar chart scores (0 to 1) are calculated based on the full global range (Min - Max) of all foods. <span class="font-bold primary-text">1.0 = Highest Value</span>.</p>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 rounded-lg overflow-hidden shadow-md">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">Metric (Global Range / Original Goal)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">${name1} Value</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">${name2} Value</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+            `;
+            const metricKeys = Object.keys(currentMetrics);
+
+        labels.forEach((label, index) => {
+            // Get the raw values for both foods NaN if it isn't numeric
+            const value1 = typeof raw1[index] === 'number' ? raw1[index].toFixed(2) : 'N/A';
+            const value2 = typeof raw2[index] === 'number' ? raw2[index].toFixed(2) : 'N/A';
+            const unit = units[index];
+            const metricKey = metricKeys[index];
+            const metricProps = currentMetrics[metricKey];
+
+            // Search up the global min and maximum values for this metric while looking at all foods
+            const minVal = globalMinMax[metricKey] ? globalMinMax[metricKey].min.toFixed(2) : 'N/A';
+            const maxVal = globalMinMax[metricKey] ? globalMinMax[metricKey].max.toFixed(2) : 'N/A';
+            
+            // Provide the option if "higher is better" or "lower is better" for this metric
+            const isHighBetter = metricProps.direction === 'high';
+            const goalClass = 'primary-text'; 
+            const goalIcon = isHighBetter ? 'fa-arrow-circle-up' : 'fa-arrow-circle-down'; 
+            const goalText = isHighBetter ? 'High Value is Best' : 'Low Value is Best';
+
+            // Build one row of the comparison table 
+            detailHtml += `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                        <!-- metric label and arrow icon showing goal direction -->
+                        <div class="flex items-center">
+                            <i class="fa-solid ${goalIcon} ${goalClass} mr-2"></i>
+                            <span>${label}</span>
+                        </div>
+                        <!-- show which one is better: high vs low -->
+                        <span class="block text-xs text-gray-500 ml-6">Original Goal: 
+                            <span class="font-semibold ${goalClass}">${goalText}</span>
+                        </span>
+                        <!-- also show the global min and max values for added context for the user -->
+                        <span class="block text-xs text-gray-400 ml-6">Range: ${minVal} - ${maxVal} ${unit}</span>
+                    </td>
+                    <!-- Value for food 1 -->
+                    <td class="px-6 py-4 text-sm text-gray-700 font-semibold">${value1} ${unit}</td>
+                    <!-- Value for food 2 -->
+                    <td class="px-6 py-4 text-sm text-gray-700 font-semibold">${value2} ${unit}</td>
+                </tr>
+            `;
+        });
+
+            detailHtml += `</tbody></table></div>`;
+            document.getElementById('detail-container').innerHTML = detailHtml;
+        }
+
+        // loading the CSV file
+        window.onload = function() {
+            createNavbar();
+            
+            // Making it for mobile
+            const menuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            if(menuButton) {
+                menuButton.addEventListener('click', () => {
+                    const isExpanded = menuButton.getAttribute('aria-expanded') === 'true' || false;
+                    menuButton.setAttribute('aria-expanded', !isExpanded);
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+
+            // Make the panels work (to open and to close it). It also loads the dataset
+            document.getElementById('openColumnSelectionBtn').addEventListener('click', () => toggleColumnSelectionPanel(true));
+            document.getElementById('closePanelBtn').addEventListener('click', () => toggleColumnSelectionPanel(false));
+            
+            loadAndParseCSV(CSV_FILE_PATH);
+        }
+    </script>
+</body>
+</html>

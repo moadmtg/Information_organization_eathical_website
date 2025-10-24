@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.jsdelivr.net/npm/n3@1.17.3/browser/n3.min.js"></script>
+  <title>Eathical: Range Filter</title>
+   <script src="https://cdn.jsdelivr.net/npm/n3@1.17.1/browser/n3.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet"/>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #EDF5EC; }
+    :root { --primary-color:#68b97d; --accent-color:#f77894; }
+    .primary-bg  { background-color: var(--primary-color); }
+    .primary-text{ color: var(--primary-color); }
+    .nav-link{ color:#4b5563; border-bottom:2px solid transparent; padding:.5rem .75rem; font-weight:500; transition:.15s; }
+    .nav-link:hover{ color:var(--primary-color); border-color: currentColor; }
+    .nav-link.current{ color:var(--primary-color); border-color: currentColor; }
+    .card{ background:#fff; border-radius:.75rem; box-shadow:0 10px 24px rgba(0,0,0,.08); }
+    .table-wrap{ overflow-x:auto; }
+    th, td { white-space:nowrap; }
+    details > summary { cursor: pointer; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-white shadow-md sticky top-0 z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <a href="index.html" class="flex items-center space-x-2">
+          <i class="fa-solid fa-seedling primary-text text-2xl"></i>
+          <span class="text-2xl font-extrabold text-gray-800">Eathical</span>
+        </a>
+        <nav id="desktop-nav" class="hidden sm:ml-6 sm:flex sm:space-x-4 items-center"></nav>
+        <button id="mobile-menu-button" class="sm:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100" aria-expanded="false">
+          <i class="fa-solid fa-bars text-xl"></i>
+        </button>
+      </div>
+    </div>
+    <div id="mobile-menu" class="hidden sm:hidden bg-white shadow-lg">
+      <div id="mobile-menu-links" class="pt-2 pb-3 space-y-1"></div>
+    </div>
+  </header>
+
+  <main class="flex-grow">
+    <!-- Hero -->
+    <section class="primary-bg text-white py-12">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl sm:text-4xl font-extrabold">Range Filter</h1>
+        <p class="text-white/95 mt-2">Filter by environment and full nutrition (incl. vitamins and minerals) per 100g</p>
+      </div>
+    </section>
+
+    <!-- Filters -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
+      <div class="card p-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Food group</label>
+            <select id="groupSelect" class="w-full border-gray-300 rounded-md p-2">
+              <option value="">All groups</option>
+            </select>
+          </div>
+
+          <!-- ENVIRONMENT -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">CO₂ (kg CO₂)</label>
+            <div class="flex items-center gap-2">
+              <input id="minCO2" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+              <input id="maxCO2" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Water (m³)</label>
+            <div class="flex items-center gap-2">
+              <input id="minWater" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+              <input id="maxWater" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Land (m²a)</label>
+            <div class="flex items-center gap-2">
+              <input id="minLand" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+              <input id="maxLand" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+            </div>
+          </div>
+
+          <!-- MACROS -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Energy (kJ)</label>
+            <div class="flex items-center gap-2">
+              <input id="minKJ" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+              <input id="maxKJ" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Energy (kcal)</label>
+            <div class="flex items-center gap-2">
+              <input id="minKcal" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+              <input id="maxKcal" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Protein (g)</label>
+            <div class="flex items-center gap-2">
+              <input id="minProt" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+              <input id="maxProt" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Fat (g)</label>
+            <div class="flex items-center gap-2">
+              <input id="minFat" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+              <input id="maxFat" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Fatty acids (g)</label>
+            <div class="flex items-center gap-2">
+              <input id="minFA" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+              <input id="maxFA" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Carbohydrates (g)</label>
+            <div class="flex items-center gap-2">
+              <input id="minCarb" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+              <input id="maxCarb" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Sugars (g)</label>
+            <div class="flex items-center gap-2">
+              <input id="minSugar" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+              <input id="maxSugar" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Fiber (g)</label>
+            <div class="flex items-center gap-2">
+              <input id="minFiber" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+              <input id="maxFiber" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+            </div>
+          </div>
+<!-- MINERALS -->
+<details class="md:col-span-3">
+  <summary class="text-sm font-semibold text-gray-700 mb-2">Minerals filters</summary>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Chloride (mg)</label>
+      <div class="flex items-center gap-2">
+        <input id="minChl" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+        <input id="maxChl" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Sodium (mg)</label>
+      <div class="flex items-center gap-2">
+        <input id="minNa" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+        <input id="maxNa" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Potassium (mg)</label>
+      <div class="flex items-center gap-2">
+        <input id="minK" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+        <input id="maxK" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Calcium (mg)</label>
+      <div class="flex items-center gap-2">
+        <input id="minCa" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+        <input id="maxCa" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Phosphorus (mg)</label>
+      <div class="flex items-center gap-2">
+        <input id="minP" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+        <input id="maxP" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Magnesium (mg)</label>
+      <div class="flex items-center gap-2">
+        <input id="minMg" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+        <input id="maxMg" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Iron (mg)</label>
+      <div class="flex items-center gap-2">
+        <input id="minFe" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+        <input id="maxFe" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Copper (mg)</label>
+      <div class="flex items-center gap-2">
+        <input id="minCu" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+        <input id="maxCu" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Selenium (µg)</label>
+      <div class="flex items-center gap-2">
+        <input id="minSe" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+        <input id="maxSe" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Zinc (mg)</label>
+      <div class="flex items-center gap-2">
+        <input id="minZn" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+        <input id="maxZn" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Iodine (µg)</label>
+      <div class="flex items-center gap-2">
+        <input id="minI" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+        <input id="maxI" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+      </div>
+    </div>
+  </div>
+</details>
+
+<!-- VITAMINS -->
+<details class="md:col-span-3">
+  <summary class="text-sm font-semibold text-gray-700 mb-2">Vitamins filters</summary>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Vitamin D (µg)</label>
+      <div class="flex items-center gap-2">
+        <input id="minVitD" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+        <input id="maxVitD" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Vitamin E (mg)</label>
+      <div class="flex items-center gap-2">
+        <input id="minVitE" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+        <input id="maxVitE" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Vitamin K (µg)</label>
+      <div class="flex items-center gap-2">
+        <input id="minVitK" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+        <input id="maxVitK" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Vitamin B1 (mg)</label>
+      <div class="flex items-center gap-2">
+        <input id="minB1" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+        <input id="maxB1" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Vitamin B2 (mg)</label>
+      <div class="flex items-center gap-2">
+        <input id="minB2" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+        <input id="maxB2" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Vitamin B6 (mg)</label>
+      <div class="flex items-center gap-2">
+        <input id="minB6" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+        <input id="maxB6" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Vitamin B12 (µg)</label>
+      <div class="flex items-center gap-2">
+        <input id="minB12" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+        <input id="maxB12" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Vitamin B3 (mg)</label>
+      <div class="flex items-center gap-2">
+        <input id="minB3" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+        <input id="maxB3" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Vitamin C (mg)</label>
+      <div class="flex items-center gap-2">
+        <input id="minVitC" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="min">
+        <input id="maxVitC" type="number" min="0" step="any" class="w-1/2 border-gray-300 rounded-md p-2" placeholder="max">
+      </div>
+    </div>
+  </div>
+</details>
+
+        </div>
+
+        <div class="mt-6 flex flex-wrap gap-3">
+          <button id="applyBtn" class="primary-bg text-white font-semibold py-2 px-4 rounded-md hover:opacity-90 transition">
+            <i class="fa-solid fa-filter mr-2"></i>Apply filters
+          </button>
+          <button id="resetBtn" class="bg-gray-100 text-gray-700 font-semibold py-2 px-4 rounded-md hover:bg-gray-200 transition">
+            Reset
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 mb-10">
+      <div class="card p-6">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+          <h2 class="text-xl font-bold primary-text">Filtered Results</h2>
+          <div id="count" class="text-sm text-gray-500">0 items</div>
+        </div>
+        <div id="errorMsg" class="hidden mb-3 rounded-md bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
+          No results found for the chosen ranges. Please modify your filters.
+        </div>
+<div class="table-wrap">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Food Item</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Group</th>
+                <!-- env -->
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">CO₂ (kg)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Water (m³)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Land (m²a)</th>
+                <!-- macros -->
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Energy (kJ)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Energy (kcal)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Protein (g)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Fat (g)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Fatty acids (g)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Carbs (g)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Sugars (g)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Fiber (g)</th>
+                <!-- minerals -->
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Chloride (mg)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Sodium (mg)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Potassium (mg)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Calcium (mg)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Phosphorus (mg)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Magnesium (mg)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Iron (mg)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Copper (mg)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Selenium (µg)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Zinc (mg)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Iodine (µg)</th>
+                <!-- vitamins -->
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Vit D (µg)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Vit E (mg)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Vit K (µg)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">B1 (mg)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">B2 (mg)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">B6 (mg)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">B12 (µg)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">B3 (mg)</th>
+                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Vit C (mg)</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody" class="bg-white divide-y divide-gray-200">
+              <tr><td colspan="31" class="px-4 py-6 text-center text-gray-500">Set filters and press “Apply”.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white py-8 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <p class="text-sm">© <span id="year"></span> Eathical — Food Impact Insights</p>
+    </div>
+  </footer>
+
+<script>
+/* filtering only includes items that actually have the right metric Lamb will be excluded */
+
+function loadScriptOnce(src){
+  return new Promise((resolve, reject)=>{
+    if ([...document.scripts].some(s => s.src === src)) return resolve();
+    const s = document.createElement('script');
+    s.src = src; s.async = true;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Failed to load ' + src));
+    document.head.appendChild(s);
+  });
+}
+async function ensureN3(){
+  if (window.N3) return;
+  await loadScriptOnce('https://cdn.jsdelivr.net/npm/n3@1.17.1/browser/n3.min.js');
+}
+async function ensureComunica(){
+  if (window.Comunica && Comunica.newEngine) return;
+  await loadScriptOnce('https://cdn.jsdelivr.net/npm/@comunica/browser-init-sparql@2.7.5/dist/webpack/actor-init-sparql-browser.js');
+}
+
+const TTL_URL = 'food_subclass_ontology_fix_fix.ttl';
+const fmt = (v)=> (v==null || isNaN(v)) ? '—' : Number(v).toLocaleString(undefined,{maximumFractionDigits:6});
+const toNum = (raw)=>{
+  if (raw == null) return null;
+  const txt = String(raw.value ?? raw.id ?? raw).trim().replace(/,/g,'.');
+  if (txt === '' || txt.toLowerCase() === 'nan') return null;
+  const n = Number(txt);
+  return isNaN(n) ? null : n;
+};
+const local = (iri)=> {
+  if (!iri) return '';
+  const s = String(iri);
+  const i = Math.max(s.lastIndexOf('#'), s.lastIndexOf('/'));
+  return i >= 0 ? s.slice(i+1) : s;
+};
+
+const LOCAL2FIELD = {
+  label:'name',
+  globalWarmingKgCo2:'co2', waterConsumptionM3:'water', landUseM2aCrop:'land',
+  energyKj:'kj', energyKcal:'kcal', proteinG:'protein', fatG:'fat', fattyAcidsG:'fa',
+  carbohydratesG:'carb', sugarsG:'sugar', fiberG:'fiber',
+  chlorideMg:'chl', sodiumMg:'na', potassiumMg:'k', calciumMg:'ca', phosphorusMg:'p',
+  magnesiumMg:'mg', ironMg:'fe', copperMg:'cu', seleniumG:'se', zincMg:'zn', iodineG:'i',
+  vitaminDG:'vitD', vitaminEMg:'vitE', vitaminKG:'vitK', vitaminB1Mg:'b1', vitaminB2Mg:'b2',
+  vitaminB6Mg:'b6', vitaminB12G:'b12', vitaminB3Mg:'b3', vitaminCMg:'vitC',
+  alcoholG:'alcohol', englisheasy:'englisheasy', vitaminB3Mg1:'b3_alt'
+};
+const ALL_NUM_KEYS = [
+  'co2','water','land','kj','kcal','protein','fat','fa','carb','sugar','fiber',
+  'chl','na','k','ca','p','mg','fe','cu','se','zn','i',
+  'vitD','vitE','vitK','b1','b2','b6','b12','b3','vitC',
+  'b3_alt'
+];
+
+let ITEMS = [];
+let GROUPS = [];
+let _labels = new Map();
+let _types  = new Map();
+let _store;
+
+function buildValidFoodClasses(store) {
+  const RDFS_SUB = 'http://www.w3.org/2000/01/rdf-schema#subClassOf';
+  let foodItemIRI = null;
+  for (const q of store.getQuads(null, null, null, null)) {
+    const s = String(q.subject?.id||q.subject?.value||q.subject);
+    if (local(s) === 'FoodItem') { foodItemIRI = s; break; }
+  }
+  if (!foodItemIRI) return new Set();
+  const valid = new Set([foodItemIRI]);
+  const queue = [foodItemIRI];
+  while (queue.length) {
+    const parent = queue.shift();
+    const subs = store.getQuads(null, RDFS_SUB, parent, null);
+    for (const q of subs) {
+      const c = String(q.subject?.id||q.subject?.value||q.subject);
+      if (!valid.has(c)) { valid.add(c); queue.push(c); }
+    }
+  }
+  return valid;
+}
+
+async function loadTTL() {
+  const res = await fetch(TTL_URL, {cache:'no-store'});
+  if (!res.ok) throw new Error('TTL HTTP ' + res.status);
+  const ttl = await res.text();
+
+  const parser = new N3.Parser({ format:'text/turtle' });
+  const quads = [];
+  await new Promise((resolve, reject)=>{
+    parser.parse(ttl, (err, q, pref)=>{
+      if (err) return reject(err);
+      if (q) quads.push(q); else resolve(pref);
+    });
+  });
+
+  _store = new N3.Store(quads);
+  const VALID_CLASSES = buildValidFoodClasses(_store);
+  const RDF_TYPE   = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
+  const RDFS_LABEL = 'http://www.w3.org/2000/01/rdf-schema#label';
+
+  for (const q of quads) {
+    const s = q.subject?.id || q.subject?.value || q.subject;
+    const p = q.predicate?.id || q.predicate?.value || q.predicate;
+    const o = q.object?.value ?? q.object?.id ?? q.object;
+    if (p === RDFS_LABEL) _labels.set(String(s), String(o));
+    else if (p === RDF_TYPE) {
+      const T = String(o);
+      if (!_types.has(s)) _types.set(s, new Set());
+      _types.get(s).add(T);
+    }
+  }
+
+  const bySubject = new Map();
+  const getRec = (s)=>{
+    if (!bySubject.has(s)) {
+      const base = { name:null, group:null, _id:s, _class:null };
+      ALL_NUM_KEYS.forEach(k => base[k] = null);
+      bySubject.set(s, base);
+    }
+    return bySubject.get(s);
+  };
+
+  for (const q of quads) {
+    const s = q.subject?.id || q.subject?.value || q.subject;
+    const p = q.predicate?.id || q.predicate?.value || q.predicate;
+    const o = q.object;
+    if (!s || !p) continue;
+    const r = getRec(s);
+    const pLocal = local(p);
+
+    if (p === RDFS_LABEL || pLocal === 'label') {
+      r.name = String(o.value ?? o);
+    } else if (p === RDF_TYPE) {
+      const c = String(o.value ?? o);
+      r._class = r._class || c;
+    } else if (pLocal in LOCAL2FIELD) {
+      const key = LOCAL2FIELD[pLocal];
+      if (ALL_NUM_KEYS.includes(key)) {
+        r[key] = toNum(o);
+      } else if (key === 'name' && r.name == null) {
+        r.name = String(o.value ?? o);
+      } else {
+        r[key] = toNum(o);
+      }
+    }
+  }
+
+  for (const [s, rec] of bySubject.entries()) {
+    if (!rec.name) rec.name = _labels.get(s) || local(s);
+    const classes = _types.get(s) || new Set();
+    const validCls = [...classes].filter(c => VALID_CLASSES.has(c));
+    if (validCls.length) {
+      let chosen = validCls.find(c => _labels.has(c)) || validCls[0];
+      rec._class = chosen;
+      rec.group = _labels.get(chosen) || local(chosen);
+    } else {
+      bySubject.delete(s);
+    }
+  }
+
+  ITEMS = [...bySubject.values()];
+  GROUPS = [...new Set(ITEMS.map(x => x.group).filter(g => g && g !== 'FoodItem'))]
+    .sort((a,b)=>a.localeCompare(b));
+
+  await maybeImproveGroupsWithSPARQL();
+}
+
+async function maybeImproveGroupsWithSPARQL(){
+  await ensureComunica().catch(()=>{});
+  if (!(window.Comunica && Comunica.newEngine)) return;
+
+  const engine = Comunica.newEngine();
+  let topIRI = null;
+  for (const q of _store.getQuads(null, null, null, null)) {
+    const s = String(q.subject?.id||q.subject?.value||q.subject);
+    if (local(s) === 'FoodItem') { topIRI = s; break; }
+  }
+  if (!topIRI) return;
+
+  const source = { type: 'rdfjsSource', value: _store };
+  const query = `
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    SELECT ?item ?itemLabel ?cls ?clsLabel WHERE {
+      ?item a ?cls .
+      ?cls rdfs:subClassOf* <${topIRI}> .
+      OPTIONAL { ?item rdfs:label ?itemLabel }
+      OPTIONAL { ?cls  rdfs:label ?clsLabel }
+    }
+  `;
+  try{
+    const result = await engine.queryBindings(query, { sources: [source] });
+    const map = new Map();
+    for await (const b of result) {
+      const item = b.get('item')?.value;
+      if (!item) continue;
+      const clsLabel = b.get('clsLabel')?.value || local(b.get('cls')?.value || '');
+      const itemLabel = b.get('itemLabel')?.value;
+      map.set(item, { itemLabel, clsLabel });
+    }
+    for (const r of ITEMS) {
+      const m = map.get(r._id);
+      if (!m) continue;
+      if (m.itemLabel && !r.name) r.name = m.itemLabel;
+      if (m.clsLabel) r.group = m.clsLabel;
+    }
+    GROUPS = [...new Set(ITEMS.map(x => x.group).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  }catch(e){
+    console.warn('SPARQL step failed (fallback OK):', e);
+  }
+}
+
+function fillGroups() {
+  const sel = document.getElementById('groupSelect');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">All groups</option>';
+  GROUPS.forEach(g => { const o=document.createElement('option'); o.value=g; o.textContent=g; sel.appendChild(o); });
+}
+
+/* FIltering is her.e */
+function rawVal(id){ const el=document.getElementById(id); return (el? el.value.trim() : ''); }
+function readMin(id){
+  const raw = rawVal(id);
+  let v = (raw === '' ? 0 : Number(raw));
+  if (isNaN(v) || v < 0) v = 0;
+  return v;
+}
+function readMax(id, minVal){
+  const raw = rawVal(id);
+  if (raw === '') return Infinity;
+  let v = Number(raw);
+  if (isNaN(v)) v = Infinity;
+  if (v < 0) v = 0;
+  if (v < minVal) v = minVal;
+  const el = document.getElementById(id);
+  if (el) el.value = (v === Infinity ? '' : String(v));
+  return v;
+}
+function isActive(minId, maxId){
+  // active = user typed something in min or max (empty means inactive)
+  return rawVal(minId) !== '' || rawVal(maxId) !== '';
+}
+
+/* core: if a metric is ACTIVE, require the value to exist; if not active, null is fine */
+function valuesFilter(rec, ranges, actives){
+  const inR = (val, [mn,mx], active) => {
+    if (active) {
+      if (val == null) return false; // must exist if filtering on it
+      return (val >= mn && val <= mx);
+    } else {
+      // not active → don't care; null passes
+      return (val == null) ? true : (val >= mn && val <= mx);
+    }
+  };
+  return Object.entries(ranges).every(([k, range]) => inR(rec[k], range, !!actives[k]));
+}
+
+function applyFilters() {
+  const group = document.getElementById('groupSelect')?.value || null;
+
+  const ranges = {
+    co2:[readMin('minCO2'),null], water:[readMin('minWater'),null], land:[readMin('minLand'),null],
+    kj:[readMin('minKJ'),null], kcal:[readMin('minKcal'),null], protein:[readMin('minProt'),null],
+    fat:[readMin('minFat'),null], fa:[readMin('minFA'),null], carb:[readMin('minCarb'),null],
+    sugar:[readMin('minSugar'),null], fiber:[readMin('minFiber'),null],
+    chl:[readMin('minChl'),null], na:[readMin('minNa'),null], k:[readMin('minK'),null],
+    ca:[readMin('minCa'),null], p:[readMin('minP'),null], mg:[readMin('minMg'),null],
+    fe:[readMin('minFe'),null], cu:[readMin('minCu'),null], se:[readMin('minSe'),null],
+    zn:[readMin('minZn'),null], i:[readMin('minI'),null],
+    vitD:[readMin('minVitD'),null], vitE:[readMin('minVitE'),null], vitK:[readMin('minVitK'),null],
+    b1:[readMin('minB1'),null], b2:[readMin('minB2'),null], b6:[readMin('minB6'),null],
+    b12:[readMin('minB12'),null], b3:[readMin('minB3'),null], vitC:[readMin('minVitC'),null],
+    b3_alt:[readMin('minB3Alt'),null]
+  };
+  Object.entries(ranges).forEach(([k,[mn]])=>{
+    const id = ({
+      co2:'maxCO2', water:'maxWater', land:'maxLand', kj:'maxKJ', kcal:'maxKcal', protein:'maxProt', fat:'maxFat',
+      fa:'maxFA', carb:'maxCarb', sugar:'maxSugar', fiber:'maxFiber', chl:'maxChl', na:'maxNa', k:'maxK',
+      ca:'maxCa', p:'maxP', mg:'maxMg', fe:'maxFe', cu:'maxCu', se:'maxSe', zn:'maxZn', i:'maxI',
+      vitD:'maxVitD', vitE:'maxVitE', vitK:'maxVitK', b1:'maxB1', b2:'maxB2', b6:'maxB6', b12:'maxB12', b3:'maxB3', vitC:'maxVitC',
+      b3_alt:'maxB3Alt'
+    })[k];
+    ranges[k][1] = readMax(id, mn);
+  });
+
+  // welke metrics zijn ACTIEF (user heeft min/max ingevuld)?
+  const actives = {
+    co2:isActive('minCO2','maxCO2'), water:isActive('minWater','maxWater'), land:isActive('minLand','maxLand'),
+    kj:isActive('minKJ','maxKJ'), kcal:isActive('minKcal','maxKcal'), protein:isActive('minProt','maxProt'),
+    fat:isActive('minFat','maxFat'), fa:isActive('minFA','maxFA'), carb:isActive('minCarb','maxCarb'),
+    sugar:isActive('minSugar','maxSugar'), fiber:isActive('minFiber','maxFiber'),
+    chl:isActive('minChl','maxChl'), na:isActive('minNa','maxNa'), k:isActive('minK','maxK'),
+    ca:isActive('minCa','maxCa'), p:isActive('minP','maxP'), mg:isActive('minMg','maxMg'),
+    fe:isActive('minFe','maxFe'), cu:isActive('minCu','maxCu'), se:isActive('minSe','maxSe'),
+    zn:isActive('minZn','maxZn'), i:isActive('minI','maxI'),
+    vitD:isActive('minVitD','maxVitD'), vitE:isActive('minVitE','maxVitE'), vitK:isActive('minVitK','maxVitK'),
+    b1:isActive('minB1','maxB1'), b2:isActive('minB2','maxB2'), b6:isActive('minB6','maxB6'),
+    b12:isActive('minB12','maxB12'), b3:isActive('minB3','maxB3'), vitC:isActive('minVitC','maxVitC'),
+    b3_alt:isActive('minB3Alt','maxB3Alt')
+  };
+
+  let rows = ITEMS.filter(r =>
+    (!group || (r.group && r.group.toLowerCase() === group.toLowerCase())) &&
+    valuesFilter(r, ranges, actives)
+  );
+
+  rows.sort((a,b)=>{
+    const a1 = (a.co2 ?? Infinity) - (b.co2 ?? Infinity); if (a1!==0) return a1;
+    const a2 = (a.water ?? Infinity) - (b.water ?? Infinity); if (a2!==0) return a2;
+    const a3 = (a.land ?? Infinity) - (b.land ?? Infinity); if (a3!==0) return a3;
+    const a4 = (a.kcal ?? Infinity) - (b.kcal ?? Infinity); if (a4!==0) return a4;
+    return a.name.localeCompare(b.name);
+  });
+
+  const tbody = document.getElementById('resultsBody');
+  const count = document.getElementById('count');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  if (!rows.length) {
+    const err = document.getElementById('errorMsg');
+    if (err) err.classList.remove('hidden');
+    tbody.innerHTML = '<tr><td colspan="32" class="px-4 py-6 text-center text-gray-500">Geen matches. Pas je filters even aan.</td></tr>';
+    if (count) count.textContent = '0 items';
+    return;
+  }
+  const err = document.getElementById('errorMsg'); if (err) err.classList.add('hidden');
+
+  rows.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="px-4 py-2 font-semibold text-gray-800">${r.name}</td>
+      <td class="px-4 py-2 text-gray-700">${r.group ?? '—'}</td>
+      <td class="px-4 py-2">${fmt(r.co2)}</td>
+      <td class="px-4 py-2">${fmt(r.water)}</td>
+      <td class="px-4 py-2">${fmt(r.land)}</td>
+      <td class="px-4 py-2">${fmt(r.kj)}</td>
+      <td class="px-4 py-2">${fmt(r.kcal)}</td>
+      <td class="px-4 py-2">${fmt(r.protein)}</td>
+      <td class="px-4 py-2">${fmt(r.fat)}</td>
+      <td class="px-4 py-2">${fmt(r.fa)}</td>
+      <td class="px-4 py-2">${fmt(r.carb)}</td>
+      <td class="px-4 py-2">${fmt(r.sugar)}</td>
+      <td class="px-4 py-2">${fmt(r.fiber)}</td>
+      <td class="px-4 py-2">${fmt(r.chl)}</td>
+      <td class="px-4 py-2">${fmt(r.na)}</td>
+      <td class="px-4 py-2">${fmt(r.k)}</td>
+      <td class="px-4 py-2">${fmt(r.ca)}</td>
+      <td class="px-4 py-2">${fmt(r.p)}</td>
+      <td class="px-4 py-2">${fmt(r.mg)}</td>
+      <td class="px-4 py-2">${fmt(r.fe)}</td>
+      <td class="px-4 py-2">${fmt(r.cu)}</td>
+      <td class="px-4 py-2">${fmt(r.se)}</td>
+      <td class="px-4 py-2">${fmt(r.zn)}</td>
+      <td class="px-4 py-2">${fmt(r.i)}</td>
+      <td class="px-4 py-2">${fmt(r.vitD)}</td>
+      <td class="px-4 py-2">${fmt(r.vitE)}</td>
+      <td class="px-4 py-2">${fmt(r.vitK)}</td>
+      <td class="px-4 py-2">${fmt(r.b1)}</td>
+      <td class="px-4 py-2">${fmt(r.b2)}</td>
+      <td class="px-4 py-2">${fmt(r.b6)}</td>
+      <td class="px-4 py-2">${fmt(r.b12)}</td>
+      <td class="px-4 py-2">${fmt(r.b3)}</td>
+      <td class="px-4 py-2">${fmt(r.vitC)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  if (count) count.textContent = rows.length + ' items';
+}
+
+function wireButtons(){
+  document.getElementById('applyBtn')?.addEventListener('click', applyFilters);
+  document.getElementById('resetBtn')?.addEventListener('click', ()=>{
+    const minIds = ['minCO2','minWater','minLand','minKJ','minKcal','minProt','minFat','minFA','minCarb','minSugar','minFiber',
+      'minChl','minNa','minK','minCa','minP','minMg','minFe','minCu','minSe','minZn','minI',
+      'minVitD','minVitE','minVitK','minB1','minB2','minB6','minB12','minB3','minVitC','minB3Alt'];
+    const maxIds = ['maxCO2','maxWater','maxLand','maxKJ','maxKcal','maxProt','maxFat','maxFA','maxCarb','maxSugar','maxFiber',
+      'maxChl','maxNa','maxK','maxCa','maxP','maxMg','maxFe','maxCu','maxSe','maxZn','maxI',
+      'maxVitD','maxVitE','maxVitK','maxB1','maxB2','maxB6','maxB12','maxB3','maxVitC','maxB3Alt'];
+    minIds.forEach(id => { const el=document.getElementById(id); if (el) el.value = ''; });
+    maxIds.forEach(id => { const el=document.getElementById(id); if (el) el.value = ''; });
+    document.getElementById('groupSelect').value = '';
+    document.getElementById('resultsBody').innerHTML =
+      '<tr><td colspan="32" class="px-4 py-6 text-center text-gray-500">Set filters and press “Apply”.</td></tr>';
+    document.getElementById('count').textContent = '0 items';
+  });
+}
+
+window.addEventListener('load', async () => {
+  try{
+    await ensureN3();
+    await loadTTL();
+    fillGroups();
+    wireButtons();
+  }catch(e){
+    console.error(e);
+    alert('Failed to load ontology: ' + e.message);
+  }
+});
+
+/* Niet DE NAV VERANDEREN */
+function createNavbar() {
+  const navLinks = [
+  { name: 'Home',            href: 'index.html',                          icon: 'fa-house' },
+  { name: 'Food Matrix',     href: 'food_explorer_dashboard.html',        icon: 'fa-table' },
+  { name: 'Food Comparison', href: 'comparison_dashboard_final_v3Clean.html', icon: 'fa-chart-bar' },
+  { name: 'NutriSubstitutes',href: 'substitution_dashboard.html',         icon: 'fa-exchange-alt' },
+  { name: 'Quiz',            href: 'quiz.html',                           icon: 'fa-clipboard-question' },
+  { name: 'Range Filter',    href: 'semantic_filter.html',                 icon: 'fa-filter' },
+  { name: 'About Us',        href: 'about_us.html',                        icon: 'fa-circle-info' }
+];
+
+  const nevoLinks = [
+    { name: 'Dutch Food Composition Database', href: 'https://www.rivm.nl/en/dutch-food-composition-database' },
+    { name: 'Life Cycle Analysis database', href: 'https://www.rivm.nl/en/food-and-nutrition/sustainable-food/environmental-impact-of-food-products' }
+  ];
+  const path = window.location.pathname;
+  const desktopNav = document.getElementById('desktop-nav');
+  const mobileNav  = document.getElementById('mobile-menu-links');
+  if (!desktopNav || !mobileNav) return;
+  desktopNav.innerHTML = '';
+  mobileNav.innerHTML  = '';
+  navLinks.forEach(link => {
+    const isCurrent = path.endsWith('/' + link.href) || path.endsWith(link.href) ||
+      (link.name === 'Home' && (path.endsWith('index.html') || path === '/' || path === ''));
+    const linkClass = isCurrent
+      ? 'primary-text border-b-2 border-current px-3 py-2 text-sm font-medium transition duration-150'
+      : 'text-gray-600 hover:primary-text border-b-2 border-transparent hover:border-current px-3 py-2 text-sm font-medium transition duration-150';
+    const mobileClass = isCurrent
+      ? 'block primary-text bg-gray-50 px-3 py-2 rounded-md text-base font-medium'
+      : 'block text-gray-700 hover:primary-text hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium';
+    desktopNav.innerHTML += `
+      <a href="${link.href}" class="${linkClass}">
+        <i class="fa-solid ${link.icon} mr-1"></i>${link.name}
+      </a>`;
+    mobileNav.innerHTML += `
+      <a href="${link.href}" class="${mobileClass}">
+        <i class="fa-solid ${link.icon} mr-2"></i>${link.name}
+      </a>`;
+  });
+  const nevoDropdown = document.createElement('div');
+  nevoDropdown.className = "relative group";
+  nevoDropdown.innerHTML = `
+    <button class="text-gray-600 hover:primary-text border-b-2 border-transparent hover:border-current px-3 py-2 text-sm font-medium transition duration-150 flex items-center">
+      <i class="fa-solid fa-arrow-up-right-from-square mr-1"></i> Visit RIVM
+      <i class="fa-solid fa-caret-down ml-1"></i>
+    </button>
+    <div class="absolute hidden group-hover:block hover:block bg-white shadow-md rounded-md top-full left-0 z-20">
+      ${nevoLinks.map(l => `
+        <a href="${l.href}" target="_blank" rel="noopener noreferrer"
+           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 whitespace-nowrap">
+          ${l.name}
+        </a>`).join('')}
+    </div>
+  `;
+  desktopNav.appendChild(nevoDropdown);
+  const mobileNEVO = `
+    <div class="mt-2 border-t border-gray-200">
+      <span class="block px-3 py-2 text-gray-500 text-xs font-semibold">Visit NEVO</span>
+      ${nevoLinks.map(l => `
+        <a href="${l.href}" target="_blank" rel="noopener noreferrer"
+           class="block text-gray-700 hover:primary-text hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium">
+          ${l.name}
+        </a>`).join('')}
+    </div>
+  `;
+  mobileNav.innerHTML += mobileNEVO;
+}
+document.getElementById('mobile-menu-button').addEventListener('click', function() {
+  const menu = document.getElementById('mobile-menu');
+  const isExpanded = this.getAttribute('aria-expanded') === 'true' || false;
+  this.setAttribute('aria-expanded', !isExpanded);
+  menu.classList.toggle('hidden');
+});
+window.onload = function() { createNavbar(); };
+
+/* input guard: no negatives; empty stays empty */
+function clampNonNegative(e){
+  const el = e.target;
+  if (el && el.type === 'number') {
+    const v = el.value.trim();
+    if (v === '') return;
+    const n = Number(v);
+    if (!Number.isFinite(n) || n < 0) el.value = '0';
+  }
+}
+document.addEventListener('input', function(e){
+  if (e.target && e.target.matches('input[type="number"]')) clampNonNegative(e);
+}, true);
+</script>
+
+</body>
+</html>
+

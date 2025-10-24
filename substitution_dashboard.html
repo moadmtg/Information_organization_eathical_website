@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Food Insights - Substitute Goods Analyzer</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+    <script>
+        // Custom Tailwind Configuration for Light/Dark Mode (Kept for the rest of the body content)
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        // PRIMARY is redefined below to match the Index.html green
+                        primary: "#EDF5EC", // Mint Green from Index.html
+                        "background-light": "#F7F9FC",
+                        "background-dark": "#1A202C",
+                        "card-light": "#FFFFFF",
+                        "card-dark": "#2D3748",
+                        "text-light": "#1F2937",
+                        "text-dark": "#E2E8F0",
+                        "subtext-light": "#6B7280",
+                        "subtext-dark": "#A0AEC0",
+                        "border-light": "#E5E7EB",
+                        "border-dark": "#4A5568",
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        /* CSS from Index.html for consistent styling */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #EDF5EC; /* Light background from Index.html */
+            scroll-behavior: smooth;
+        }
+
+        :root {
+            --primary-color: #68b97d; /* Mint Green */
+            --accent-color: #f77894; /* Cute Pink */
+        }
+
+        .primary-bg { background-color: var(--primary-color); }
+        .primary-text { color: var(--primary-color); }
+        .accent-bg { background-color: var(--accent-color); }
+        .accent-text { color: var(--accent-color); }
+
+        /* Custom utility for link effects (If needed, not strictly for nav/footer) */
+        .card-link {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-link:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(104, 185, 125, 0.2);
+        }
+
+        /* Nav link custom style for consistency */
+        /* NOTE: The JavaScript below uses the inline classes for better Tailwind compatibility */
+        
+        /* The body classes are adjusted to use the Index.html background but keep dark mode support for inner cards */
+    </style>
+</head>
+<body class="bg-f7fbf8 dark:bg-background-dark text-text-light dark:text-text-dark font-display min-h-screen flex flex-col">
+
+    <header class="bg-white shadow-md sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="index.html" class="flex items-center space-x-2">
+                    <i class="fa-solid fa-seedling primary-text text-2xl"></i>
+                    <span class="text-2xl font-extrabold text-gray-800">Eathical</span>
+                </a>
+
+                <nav id="desktop-nav" class="hidden sm:ml-6 sm:flex sm:space-x-4 items-center"></nav>
+
+                <button id="mobile-menu-button" class="sm:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:primary-text" aria-expanded="false">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="mobile-menu" class="hidden sm:hidden bg-white shadow-lg">
+            <div id="mobile-menu-links" class="pt-2 pb-3 space-y-1">
+                </div>
+        </div>
+    </header>
+    <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex items-center mb-6">
+                <i class="fas fa-exchange-alt primary-text text-3xl mr-4"></i>
+                <div>
+                    <h1 class="text-3xl font-bold text-text-light dark:text-text-dark">NutriSubstitutes</h1>
+                    <p class="text-subtext-light dark:text-subtext-dark mt-1">Find the most nutritionally similar products based on a comprehensive profile including energy, protein, fat, carbohydrates, and key vitamins and minerals.</p>
+                </div>
+            </div>
+
+            <div id="status-message" class="mt-6 p-4 text-center rounded-lg primary-bg text-white font-medium hidden mb-4">Loading data...</div>
+
+            <div class="bg-card-light dark:bg-card-dark p-6 rounded-lg shadow-md mb-8">
+                <p class="text-sm text-subtext-light dark:text-subtext-dark mb-6 font-bold">This tool helps you find the best nutritional substitutes for a given product. Based on a comprehensive dataset, we use a K-Nearest Neighbors (KNN) algorithm to identify products with the most similar nutritional profiles per 100 grams within the same food group.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="flex items-center text-sm font-medium text-subtext-light dark:text-subtext-dark mb-2" for="food-group">
+                            <span class="material-icons text-lg mr-2">category</span>
+                            1. Select Food Group
+                        </label>
+                        <div class="relative">
+                            <select class="w-full pl-3 pr-10 py-2 text-base border-border-light dark:border-border-dark focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md bg-card-light dark:bg-card-dark text-text-light dark:text-text-dark" id="food-group">
+                                <option value="" disabled selected>-- Select a group --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="flex items-center text-sm font-medium text-subtext-light dark:text-subtext-dark mb-2" for="product">
+                            <span class="material-icons text-lg mr-2">restaurant</span>
+                            2. Select Product
+                        </label>
+                        <div class="relative">
+                            <select class="w-full pl-3 pr-10 py-2 text-base border-border-light dark:border-border-dark focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md bg-card-light dark:bg-card-dark text-text-light dark:text-text-dark" id="product" disabled>
+                                <option value="" disabled selected>-- Select a product --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-card-light dark:bg-card-dark rounded-lg shadow-md overflow-hidden">
+                <div class="p-6 border-b border-border-light dark:border-border-dark">
+                    <h2 class="text-xl font-semibold text-text-light dark:text-text-dark">
+                        Top Substitutes for: <span id="selected-food-name" class="primary-text font-bold">Select a product</span>
+                    </h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-border-light dark:divide-border-dark">
+                        <thead class="bg-background-light dark:bg-background-dark">
+                            <tr>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-subtext-light dark:text-subtext-dark uppercase tracking-wider" scope="col">Rank</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-subtext-light dark:text-subtext-dark uppercase tracking-wider" scope="col">Substitute Product</th>
+                            </tr>
+                        </thead>
+                        <tbody id="knn-results-body" class="bg-card-light dark:bg-card-dark divide-y divide-border-light dark:divide-border-dark">
+                            <tr>
+                                <td colspan="2" class="px-6 py-4 text-center text-sm text-subtext-light dark:text-subtext-dark">Select a food group and product.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white py-8 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <p class="text-sm">
+        © <span id="year"></span> Eathical — Food Impact Insights
+      </p>
+    </div>
+  </footer>
+  
+    <script>
+    // Custom Alert functions (Nodig om de JS van de Index.html te laten werken)
+    function showCustomAlert(message) {
+        document.getElementById('alert-message').textContent = message;
+        document.getElementById('custom-alert').classList.remove('hidden');
+    }
+
+    function hideCustomAlert() {
+        document.getElementById('custom-alert').classList.add('hidden');
+    }
+
+    function createNavbar() {
+  const navLinks = [
+  { name: 'Home',            href: 'index.html',                          icon: 'fa-house' },
+  { name: 'Food Matrix',     href: 'food_explorer_dashboard.html',        icon: 'fa-table' },
+  { name: 'Food Comparison', href: 'comparison_dashboard_final_v3Clean.html', icon: 'fa-chart-bar' },
+  { name: 'NutriSubstitutes',href: 'substitution_dashboard.html',         icon: 'fa-exchange-alt' },
+  { name: 'Quiz',            href: 'quiz.html',                           icon: 'fa-clipboard-question' },
+  { name: 'Range Filter',    href: 'semantic_filter.html',                 icon: 'fa-filter' },
+  { name: 'About Us',        href: 'about_us.html',                        icon: 'fa-circle-info' }
+];
+  const nevoLinks = [
+    { name: 'Dutch Food Composition Database', href: 'https://www.rivm.nl/en/dutch-food-composition-database' },
+    { name: 'Life Cycle Analysis database', href: 'https://www.rivm.nl/en/food-and-nutrition/sustainable-food/environmental-impact-of-food-products' }
+  ];
+
+  const path = window.location.pathname;
+  const desktopNav = document.getElementById('desktop-nav');
+  const mobileNav  = document.getElementById('mobile-menu-links');
+  if (!desktopNav || !mobileNav) return;
+
+  desktopNav.innerHTML = '';
+  mobileNav.innerHTML  = '';
+
+  // build normal links
+  navLinks.forEach(link => {
+    const isCurrent = path.endsWith('/' + link.href) || path.endsWith(link.href) ||
+      (link.name === 'Home' && (path.endsWith('index.html') || path === '/' || path === ''));
+
+    const linkClass = isCurrent
+      ? 'primary-text border-b-2 border-current px-3 py-2 text-sm font-medium transition duration-150'
+      : 'text-gray-600 hover:primary-text border-b-2 border-transparent hover:border-current px-3 py-2 text-sm font-medium transition duration-150';
+
+    const mobileClass = isCurrent
+      ? 'block primary-text bg-gray-50 px-3 py-2 rounded-md text-base font-medium'
+      : 'block text-gray-700 hover:primary-text hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium';
+
+    desktopNav.innerHTML += `
+      <a href="${link.href}" class="${linkClass}">
+        <i class="fa-solid ${link.icon} mr-1"></i>${link.name}
+      </a>`;
+
+    mobileNav.innerHTML += `
+      <a href="${link.href}" class="${mobileClass}">
+        <i class="fa-solid ${link.icon} mr-2"></i>${link.name}
+      </a>`;
+  });
+
+  // add NEVO dropdown (desktop)
+  const nevoDropdown = document.createElement('div');
+  nevoDropdown.className = "relative group";
+  nevoDropdown.innerHTML = `
+    <button class="text-gray-600 hover:primary-text border-b-2 border-transparent hover:border-current px-3 py-2 text-sm font-medium transition duration-150 flex items-center">
+      <i class="fa-solid fa-arrow-up-right-from-square mr-1"></i> Visit RIVM
+      <i class="fa-solid fa-caret-down ml-1"></i>
+    </button>
+    <div class="absolute hidden group-hover:block hover:block bg-white shadow-md rounded-md top-full left-0 z-20">
+
+      ${nevoLinks.map(l => `
+        <a href="${l.href}" target="_blank" rel="noopener noreferrer"
+           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 whitespace-nowrap">
+          ${l.name}
+        </a>`).join('')}
+    </div>
+  `;
+  desktopNav.appendChild(nevoDropdown);
+
+  // add NEVO section (mobile)
+  const mobileNEVO = `
+    <div class="mt-2 border-t border-gray-200">
+      <span class="block px-3 py-2 text-gray-500 text-xs font-semibold">Visit NEVO</span>
+      ${nevoLinks.map(l => `
+        <a href="${l.href}" target="_blank" rel="noopener noreferrer"
+           class="block text-gray-700 hover:primary-text hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium">
+          ${l.name}
+        </a>`).join('')}
+    </div>
+  `;
+  mobileNav.innerHTML += mobileNEVO;
+}
+
+    // JavaScript for mobile menu toggle (from Index.html)
+    document.getElementById('mobile-menu-button').addEventListener('click', function() {
+        const menu = document.getElementById('mobile-menu');
+        const isExpanded = this.getAttribute('aria-expanded') === 'true' || false;
+        this.setAttribute('aria-expanded', !isExpanded);
+        menu.classList.toggle('hidden');
+    });
+
+
+    // Constants
+    const CSV_FILE_PATH = 'vergelijk_goed.csv';
+    const CSV_DELIMITER = ',';
+
+    let fullResults = [];
+    let foodGroupData = {};
+
+    // DOM Elements
+    const foodGroupSelect = document.getElementById('food-group');
+    const foodSelect = document.getElementById('product');
+    const statusMessage = document.getElementById('status-message');
+    const selectedFoodName = document.getElementById('selected-food-name');
+    const knnResultsBody = document.getElementById('knn-results-body');
+
+    // ======== Load and Render Functions (Existing) ========
+
+    async function loadAndParseCSV(filePath) {
+        statusMessage.textContent = 'Loading substitute data...';
+        statusMessage.classList.remove('hidden');
+        statusMessage.classList.remove('bg-red-500');
+        statusMessage.classList.add('primary-bg');
+
+        try {
+            const response = await fetch(filePath);
+            if (!response.ok) {
+                throw new Error(`Error loading ${filePath}: ${response.statusText}`);
+            }
+            const csvText = await response.text();
+
+            const lines = csvText.trim().split('\n');
+            const headers = lines[0].split(CSV_DELIMITER).map(h => h.trim());
+            const data = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                if (lines[i].trim() === '') continue;
+
+                const values = lines[i].split(CSV_DELIMITER);
+                if (values.length !== headers.length) continue;
+
+                const row = {};
+                headers.forEach((header, index) => {
+                    let value = values[index].trim();
+                    if (header === 'Afstand') {
+                        row[header] = parseFloat(value);
+                    } else {
+                        row[header] = value;
+                    }
+                });
+                data.push(row);
+            }
+
+            fullResults = data;
+            processDataForDropdowns(data);
+            statusMessage.classList.add('hidden');
+            foodSelect.disabled = false;
+
+        } catch (error) {
+            statusMessage.textContent = `Error: Could not load file ${CSV_FILE_PATH}. Ensure it is in the same folder. (${error.message})`;
+            statusMessage.classList.remove('hidden', 'primary-bg');
+            statusMessage.classList.add('bg-red-500');
+            console.error('Loading error:', error);
+        }
+    }
+
+    function processDataForDropdowns(data) {
+        const groups = {};
+        data.forEach(item => {
+            const groupName = item['Food group'];
+            const productName = item['Product'];
+
+            if (!groupName || !productName) return;
+
+            if (!groups[groupName]) {
+                groups[groupName] = new Set();
+            }
+            groups[groupName].add(productName);
+        });
+
+        for (const groupName in groups) {
+            foodGroupData[groupName] = Array.from(groups[groupName]).sort();
+        }
+
+        populateFoodGroups(Object.keys(foodGroupData).sort());
+    }
+
+    function populateFoodGroups(groupNames) {
+        foodGroupSelect.innerHTML = '<option value="" disabled selected>-- Select a group --</option>';
+        groupNames.forEach(group => {
+            const option = document.createElement('option');
+            option.value = group;
+            option.textContent = group;
+            foodGroupSelect.appendChild(option);
+        });
+    }
+
+    function populateFoods(groupName) {
+        const foodsInGroup = foodGroupData[groupName] || [];
+
+        foodSelect.innerHTML = '<option value="" disabled selected>-- Select a product --</option>';
+        foodsInGroup.forEach(food => {
+            const option = document.createElement('option');
+            option.value = food;
+            option.textContent = food;
+            foodSelect.appendChild(option);
+        });
+        foodSelect.disabled = foodsInGroup.length === 0;
+    }
+
+    // Render the results in the table
+    function renderResults(results, targetFoodName) {
+        selectedFoodName.textContent = targetFoodName;
+        knnResultsBody.innerHTML = ''; // Clear the table
+
+        if (results.length === 0) {
+            knnResultsBody.innerHTML = `
+                <tr>
+                    <td colspan="2" class="px-6 py-4 text-center text-sm text-subtext-light dark:text-subtext-dark">No substitutes found for this product.</td>
+                </tr>
+            `;
+            return;
+        }
+
+        results.forEach((item, index) => {
+            const rank = index + 1;
+            const row = document.createElement('tr');
+            row.classList.add('hover:bg-background-light', 'dark:hover:bg-card-dark/70');
+
+            // Adjusted rank classes to use the new 'primary' green
+            const rankClasses = (rank === 1) 
+                ? 'bg-primary/10 primary-text' 
+                : 'bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark';
+
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-light dark:text-text-dark text-center">
+                    <span class="inline-flex items-center justify-center h-8 w-8 rounded-full font-bold ${rankClasses}">${rank}</span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium primary-text text-center">
+                    ${item['Vergelijkbaar product']}
+                </td>
+            `;
+            knnResultsBody.appendChild(row);
+        });
+    }
+
+    // ======== Event Handlers (Existing) ========
+
+    function handleFoodSelection() {
+        const selectedGroup = foodGroupSelect.value;
+        const selectedFood = foodSelect.value;
+
+        if (!selectedGroup || !selectedFood) {
+            renderResults([], 'Select a product');
+            return;
+        }
+
+        const results = fullResults
+            .filter(item => item['Food group'] === selectedGroup && item['Product'] === selectedFood);
+
+        results.sort((a, b) => a.Afstand - b.Afstand);
+
+        renderResults(results, selectedFood);
+    }
+
+    // Event listeners
+    foodGroupSelect.addEventListener('change', (e) => {
+        const selectedGroup = e.target.value;
+        populateFoods(selectedGroup);
+        foodSelect.value = '';
+        handleFoodSelection();
+    });
+
+    foodSelect.addEventListener('change', handleFoodSelection);
+
+    // Start when the page loads
+    window.onload = function() {
+        // Initialize the new navbar
+        createNavbar(); 
+        // Load the existing CSV data
+        loadAndParseCSV(CSV_FILE_PATH);
+    };
+
+</script>
+</body>
+</html>
